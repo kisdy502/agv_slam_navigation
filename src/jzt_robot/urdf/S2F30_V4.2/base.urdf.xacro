@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+
+<robot name="base" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Define a number of dimensions using properties -->
+  <xacro:property name="wheel_length" value="0.04" />
+  <xacro:property name="wheel_radius" value="0.07" />
+  <xacro:property name="wheel_offset_x" value="0" />
+  <xacro:property name="wheel_offset_y" value="0.13" />
+  <xacro:property name="wheel_offset_z" value="-0.08" />
+  
+  <xacro:property name="PI" value="3.1415926" />
+     
+  <!-- define a wheel -->
+  <xacro:macro name="wheel" params="suffix parent reflect color">
+    <joint name="${parent}_${suffix}_wheel_joint" type="continuous">
+      <axis xyz="0 0 1" />
+      <limit effort="100" velocity="100"/>
+      <safety_controller k_velocity="10" />
+      <origin xyz="${wheel_offset_x} ${reflect*wheel_offset_y} ${wheel_offset_z}" rpy="${reflect*PI/2} 0 0" />
+      <parent link="base_footprint"/>
+      <child link="${parent}_${suffix}_wheel_link"/>
+    </joint>
+    <link name="${parent}_${suffix}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
+        </geometry>
+        <material name="${color}" />
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <!-- The base xacro macro -->
+  <link name="base_footprint">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="0.001" radius="0.01"/>
+        </geometry>
+        <material name="Red" />
+      </visual>
+  </link>
+
+ <link name="base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="0.731  0.501  0.1" />
+        </geometry>
+        <material name="TransparentGreen" />
+      </visual>
+  </link>
+  
+  <joint name="base_link_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="base_link" />
+  </joint>
+ 
+
+
+  <link name="front_driving_wheel">
+    <visual>
+      <geometry>
+        <cylinder length="0.12" radius="0.11"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.57075 0 0"/>
+      <material name="Black"/>
+    </visual>
+  </link>
+  <joint name="front_driving_wheel_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="front_driving_wheel"/>
+    <origin xyz="0.162 0 -0.1" rpy="0 0 0"/>
+  </joint>
+
+
+   <wheel parent="driven" suffix="l" reflect="1" color="Orange"/>
+   <wheel parent="driven" suffix="r" reflect="-1" color="Orange"/>
+
+<link name="back_driving_wheel">
+    <visual>
+      <geometry>
+        <cylinder length="0.12" radius="0.11"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.57075 0 0"/>
+      <material name="Black"/>
+    </visual>
+  </link>
+  <joint name="back_driving_wheel_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="back_driving_wheel"/>
+    <origin xyz="-0.162 0 -0.1" rpy="0 0 0"/>
+  </joint>
+
+
+
+
+   <link name="nav_lidar1">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.035" length="0.1"/>
+        </geometry>
+        <material name="Red" />
+      </visual>
+  </link>
+
+  <joint name="nav_lidar1_joint" type="fixed">
+    <origin xyz="0.2918854 0.176833 0.1" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="nav_lidar1" />
+  </joint>
+
+  <link name="nav_lidar2">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.035" length="0.1"/>
+        </geometry>
+        <material name="Blue" />
+      </visual>
+  </link>
+
+  <joint name="nav_lidar2_joint" type="fixed">
+    <origin xyz="-0.291781 -0.176833 0.1" rpy="0 0 0" />
+    <parent link="base_footprint"/>
+    <child link="nav_lidar2" />
+  </joint>
+
+
+</robot>

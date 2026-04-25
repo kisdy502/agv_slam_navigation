@@ -1,0 +1,494 @@
+<?xml version="1.0"?>
+<robot name="jzDiffRobot">
+
+
+  <!-- Robot Footprint -->
+  <link name="base_footprint" />
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint" />
+    <child link="base_link" />
+    <origin xyz="0.0 0.0 0.005" rpy="0 0 0" />
+  </joint>
+
+
+  <!-- base link -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.6 0.4 0.12" />
+      </geometry>
+      <material name="purple">
+        <color rgba="0.5 0.0 0.5 0.5" /> <!-- purple，0.6透明 -->
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.6 0.4 0.12" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2" />
+      <inertia ixx="0.0028666" ixy="0" ixz="0" iyy="0.0062666" iyz="0" izz="0.0066666" />
+    </inertial>
+  </link>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+
+  <!-- laser link -->
+  <link name="laser_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder length="0.02" radius="0.02" />
+      </geometry>
+      <material name="dark_red">
+        <color rgba="0.8 0.0 0.0 1.0" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder length="0.002" radius="0.002" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <!-- laser joint -->
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="laser_link" />
+    <origin xyz="0 0 0.07" rpy="0 0 0" />
+  </joint>
+
+  <link name="imu_link">
+    <visual>
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.02 0.02" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.02 0.02" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.1" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <!-- imu joint -->
+  <joint name="imu_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>  <!-- 必须与base_link重合 -->
+    <parent link="base_link"/>
+    <child link="imu_link"/>
+ </joint>
+
+
+  <link name="left_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <cylinder length="0.04" radius="0.032" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0.0 0.0 0.7 0.8" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <cylinder length="0.04" radius="0.032" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+
+  </link>
+
+  <link name="right_wheel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <cylinder length="0.04" radius="0.032" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0.0 0.0 0.7 0.8" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <cylinder length="0.04" radius="0.032" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link" />
+    <child link="left_wheel_link" />
+    <origin xyz="-0.02 0.18 -0.06" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link" />
+    <child link="right_wheel_link" />
+    <origin xyz="-0.02 -0.18 -0.06" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <!-- 前右脚轮 -->
+  <link name="caster_front_right_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+      <material name="black">
+        <color rgba="0.0 0.0 0.0 0.6" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+
+    </collision>
+    <inertial>
+      <mass value="0.02" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <joint name="caster_front_right_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="caster_front_right_link" />
+    <origin xyz="0.28 0.18 -0.076" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <!-- 前左脚轮 -->
+  <link name="caster_front_left_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+      <material name="black">
+        <color rgba="0.0 0.0 0.0 0.6" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.02" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <joint name="caster_front_left_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="caster_front_left_link" />
+    <origin xyz="0.28 -0.18 -0.076" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <!-- 后右脚轮 -->
+  <link name="caster_rear_right_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+      <material name="black">
+        <color rgba="0.0 0.0 0.0 0.6" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.02" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <joint name="caster_rear_right_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="caster_rear_right_link" />
+    <origin xyz="-0.28 0.18 -0.076" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <!-- 后左脚轮 -->
+  <link name="caster_rear_left_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+      <material name="black">
+        <color rgba="0.0 0.0 0.0 0.6" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="1.57079 0 0" />
+      <geometry>
+        <sphere radius="0.016" />
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.02" />
+      <inertia ixx="0.000190416666667" ixy="0" ixz="0" iyy="0.0001904" iyz="0" izz="0.00036" />
+    </inertial>
+  </link>
+
+  <joint name="caster_rear_left_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="caster_rear_left_link" />
+    <origin xyz="-0.28 -0.18 -0.076" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  
+
+  <!-- 为四个脚轮添加Gazebo属性 -->
+  <gazebo reference="caster_front_right_link">
+    <material>Gazebo/Black</material>
+    <mu1 value="0.0" />
+    <mu2 value="0.0" />
+    <kp value="1000000.0" />
+    <kd value="10.0" />
+  </gazebo>
+
+  <gazebo reference="caster_front_left_link">
+    <material>Gazebo/Black</material>
+    <mu1 value="0.0" />
+    <mu2 value="0.0" />
+    <kp value="1000000.0" />
+    <kd value="10.0" />
+  </gazebo>
+
+  <gazebo reference="caster_rear_right_link">
+    <material>Gazebo/Black</material>
+    <mu1 value="0.0" />
+    <mu2 value="0.0" />
+    <kp value="1000000.0" />
+    <kd value="10.0" />
+  </gazebo>
+
+  <gazebo reference="caster_rear_left_link">
+    <material>Gazebo/Black</material>
+    <mu1 value="0.0" />
+    <mu2 value="0.0" />
+    <kp value="1000000.0" />
+    <kd value="10.0" />
+  </gazebo>
+
+  <gazebo>
+    <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+      <ros>
+        <namespace>$(arg robot_namespace)</namespace>
+        <remapping>cmd_vel:=cmd_vel</remapping>
+        <remapping>odom:=odom</remapping>
+      </ros>
+      <update_rate>100</update_rate>
+      <!-- wheels -->
+      <left_joint>left_wheel_joint</left_joint>
+      <right_joint>right_wheel_joint</right_joint>
+      <!-- kinematics -->
+      <wheel_separation>0.36</wheel_separation>
+      <wheel_diameter>0.065</wheel_diameter>
+      <!-- limits -->
+      <max_wheel_torque>20</max_wheel_torque>
+      <!-- max_wheel_acceleration: 轮子角加速度上限 (rad/s²)
+           线加速度 = 角加速度 × 轮子半径(0.0325m)
+           原值2.5 → 线加速度仅0.08m/s²，导致Nav2 MPPI在1.8s预测窗口内最高只能到0.13m/s
+           改为15.0 → 线加速度约0.49m/s²，可在预测窗口内达到0.88m/s，兼顾安全与性能
+           如需更高速度可增大此值，真机请根据实际电机扭矩和地面摩擦调整 -->
+      <max_wheel_acceleration>15.0</max_wheel_acceleration>
+      <!-- output -->
+      <publish_odom>true</publish_odom>
+      <!-- 禁用Gazebo发布odom TF，由Cartographer统一负责map→odom→base_footprint，避免TF冲突 -->
+      <publish_odom_tf>false</publish_odom_tf>
+      <publish_wheel_tf>true</publish_wheel_tf>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="imu_link">
+    <material>Gazebo/Purple</material>
+    <sensor name="imu_sensor" type="imu">
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <ros>
+          <namespace>$(arg robot_namespace)</namespace>
+          <remapping>~/out:=imu</remapping>
+        </ros>
+        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+        <frame_name>imu_link</frame_name>  <!-- 🔴 关键：指定frame_id -->
+      </plugin>
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>2e-4</stddev>
+              <bias_mean>0.0000075</bias_mean>
+              <bias_stddev>0.0000008</bias_stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>1.7e-2</stddev>
+              <bias_mean>0.1</bias_mean>
+              <bias_stddev>0.001</bias_stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="laser_link">
+    <material>Gazebo/Red</material>
+    <sensor name="laser_sensor" type="ray">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>20</update_rate>
+      <pose>0 0 0 0 0 0</pose>
+
+      <ray>
+        <scan>
+          <horizontal>
+            <!-- 采样点数：360→720，角度分辨率从1°提升到0.5°，提高点云贴合度 -->
+            <samples>720</samples>
+            <resolution>1.0</resolution>
+            <time_increment>0.000069</time_increment> 
+            <!-- 统一为-π~+π，与插件配置保持一致 -->
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.15</min>
+          <max>15.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <!-- 噪声标准差：0.005→0.001，降低点云抖动 -->
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.001</stddev>
+        </noise>
+      </ray>
+
+      <plugin name="gazebo_ros_head_laser_controller" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <namespace>$(arg robot_namespace)</namespace>
+          <remapping>~/out:=scan</remapping>
+        </ros>
+        <topicName>scan</topicName>
+        <frameName>laser_link</frameName>
+        <frame_name>laser_link</frame_name>  <!-- 🔴 改成激光自己的link -->
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <min_range>0.15</min_range>
+        <max_range>15.0</max_range>
+        <angle_min>-3.14159</angle_min>
+        <angle_max>3.14159</angle_max>
+        <!-- 扫描周期：0.1→0.05，匹配20Hz更新率 -->
+        <scan_time>0.05</scan_time>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <physics type="ode">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <real_time_update_rate>1000</real_time_update_rate>
+    </physics>
+  </gazebo>
+
+  <!-- 为车轮添加更好的摩擦参数 -->
+  <gazebo reference="left_wheel_link">
+    <material>Gazebo/DarkGrey</material>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+
+  <gazebo reference="right_wheel_link">
+    <material>Gazebo/DarkGrey</material>
+    <mu1>1.0</mu1>
+    <mu2>1.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+
+</robot>

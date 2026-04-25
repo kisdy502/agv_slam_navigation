@@ -1,0 +1,28 @@
+# config/degeneracy_detector.yaml
+/**:
+  ros__parameters:
+    # 扫描分析参数
+    scan_analysis:
+      min_points_for_pca: 10
+      max_range_use: 10.0
+      angle_step: 1  # 隔几个点采样
+    
+    # 匹配参数
+    matching:
+      max_correspondence_distance: 1.0
+      outlier_threshold: 0.5
+      min_inlier_ratio: 0.2
+    
+    # 退化判断
+    degeneracy:
+      # 条件数 > 1000 认为退化
+      condition_number_threshold: 1000.0
+      
+      # 最小特征值 < 0.001 认为该方向无约束
+      min_eigenvalue_threshold: 0.001
+      
+      # 有效匹配比例 < 30% 认为环境变化大
+      valid_match_ratio_threshold: 0.3
+      
+      # 连续退化帧数触发告警
+      consecutive_degenerate_frames: 5

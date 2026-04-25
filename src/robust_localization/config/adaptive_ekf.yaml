@@ -1,0 +1,38 @@
+# config/adaptive_ekf.yaml
+/**:
+  ros__parameters:
+    # EKF 基础参数
+    use_degeneracy_detector: true
+    use_adaptive_ekf: true
+    use_robust_matcher: true
+    publish_tf: true
+    
+    odom_frame: "odom"
+    map_frame: "map"
+    base_frame: "base_link"
+    
+    # 激光配置
+    laser:
+      noise_x: 0.01
+      noise_y: 0.01
+      noise_theta: 0.01
+      degeneracy_scale: 100.0    # 退化时噪声放大100倍
+      min_weight: 0.001          # 最小信任度
+    
+    # 里程计配置
+    odom:
+      noise_x: 0.05
+      noise_y: 0.05
+      noise_theta: 0.05
+    
+    # IMU配置
+    imu:
+      noise_x: 0.1
+      noise_y: 0.1
+      noise_theta: 0.01
+    
+    # 退化检测阈值
+    degeneracy:
+      condition_number_threshold: 1000.0
+      min_eigenvalue_threshold: 0.001
+      valid_match_ratio_threshold: 0.3
