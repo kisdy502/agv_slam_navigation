@@ -34,6 +34,29 @@ public:
   }
 
 private:
+  bool hasAnyInput(const sensor_msgs::msg::Joy::SharedPtr &msg) const
+  {
+    // 检查所有轴是否有超出死区的
+    for (size_t i = 0; i < msg->axes.size(); i++)
+    {
+      if (std::abs(msg->axes[i]) > deadzone_)
+      {
+        return true;
+      }
+    }
+
+    // 检查所有按钮是否有被按下的（值 != 0）
+    for (const auto &btn : msg->buttons)
+    {
+      if (btn != 0)
+      {
+        return true;
+      }
+    }
+
+    return false; // 无任何操作
+  }
+
   double applyDeadzone(double value)
   {
     if (std::abs(value) < deadzone_)
@@ -74,9 +97,30 @@ private:
 
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg)
   {
+    const bool has_input = hasAnyInput(msg);
+    //RCLCPP_INFO(this->get_logger(), "has_input=%s, ", has_input? "YES" : "NO");
+    // 如果没有输入，且上一次已经发布了零速度，就不再继续发布
+    if (!has_input)
+    {
+      // 构造零速度
+      geometry_msgs::msg::Twist zero_twist;
+      // 如果上一次发布的速度不是零，或者停止计数器未满，则发布零速并更新计数
+      if (stop_twist_count_ < 10)
+      {
+        RCLCPP_INFO(this->get_logger(), "发送停止速度控制！，第%d次。", stop_twist_count_);
+        vel_pub_->publish(zero_twist);
+        stop_twist_count_++;
+        return;
+      }
+      // 若已连续发布多次零速，则不再重复发布
+      return;
+    }
+
+    stop_twist_count_ = 0; // 只要有输入，就重置停止计数器
+    
+
     auto twist = geometry_msgs::msg::Twist();
-    // RCLCPP_INFO(this->get_logger(), "buttons[0]=%d, buttons[3]=%d",
-    //             msg->buttons[0], msg->buttons[3]);
+    
     // 紧急停止 (A键)
     if (btn_stop_ >= 0 && btn_stop_ < static_cast<int>(msg->buttons.size()))
     {
@@ -136,7 +180,6 @@ private:
 
     twist.linear.x = linear_input * getLinearScale();
     twist.angular.z = angular_input * getAngularScale();
-
     vel_pub_->publish(twist);
   }
 
@@ -149,6 +192,7 @@ private:
   int speed_level_ = 1; // 默认中速 (0=低速, 1=中速, 2=高速)
   bool speed_up_pressed_ = false;
   bool speed_down_pressed_ = false;
+  int stop_twist_count_ = 0;             // 连续发布停止命令的次数
 
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;

@@ -13,7 +13,7 @@ options = {
   provide_odom_frame = true,
   publish_frame_projected_to_2d = false,
   use_pose_extrapolator = true,
-  use_odometry = false,
+  use_odometry = true,
   use_nav_sat = false,
   use_landmarks = false,
   num_laser_scans = 1,
@@ -31,13 +31,19 @@ options = {
   landmarks_sampling_ratio = 1.,
 }
 
-MAP_BUILDER.use_trajectory_builder_2d = true
+-- 🔴 重要：必须保持 use_trajectory_builder_2d = true（默认就是 true）
+MAP_BUILDER.use_trajectory_builder_2d = true   -- 仍然使用 TrajectoryBuilder，但已设为纯定位
+
+TRAJECTORY_BUILDER.pure_localization_trimmer = {
+  max_submaps_to_keep = 3,
+}
 
 -- 激光雷达配置
 TRAJECTORY_BUILDER_2D = {
   use_online_correlative_scan_matching = true, -- 是否启用相关匹配
   use_imu_data = true,  -- 🔴 在2D builder中也明确启用
   imu_gravity_time_constant = 10.,  
+  num_accumulated_range_data = 10,  -- 累积10帧雷达数据进行匹配
   ceres_scan_matcher = {
     occupied_space_weight = 1.0,    -- 占据空间残差权重
     translation_weight = 10.0,      -- 平移正则权重
@@ -56,9 +62,9 @@ TRAJECTORY_BUILDER_2D = {
   }
 }
 
-
+-- 冻结已有轨迹，不再进行全局优化
+POSE_GRAPH.optimize_every_n_nodes = 20
 -- POSE图优化配置
-POSE_GRAPH.optimize_every_n_nodes = 15  -- 每15个节点优化一次
 POSE_GRAPH.constraint_builder.min_score = 0.6
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.55
 
