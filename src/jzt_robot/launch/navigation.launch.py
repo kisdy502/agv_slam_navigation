@@ -23,11 +23,14 @@ from launch.actions import DeclareLaunchArgument, TimerAction, LogInfo, IncludeL
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+# import logging
 
+# logging.getLogger().setLevel(logging.DEBUG)
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
     rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
+    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer.yaml'))
     
     cartographer_config_dir = os.path.join(pkg_share, 'config')
     
@@ -43,11 +46,7 @@ def generate_launch_description():
             default_value='localization_2d.lua',
             description='Cartographer Lua配置文件，导航定位用localization_2d.lua'
         ),
-        DeclareLaunchArgument(
-            'params_file',
-            default_value=os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer.yaml'),
-            description='Nav2参数文件路径，默认MPPI，可指定DWB: $(find-pkg-prefix jzt_robot)/share/jzt_robot/param/nav2_params_dwb_cartographer.yaml'
-        ),
+         DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
     ]
 
     # Cartographer 定位节点
@@ -138,11 +137,12 @@ def generate_launch_description():
 
         *declared_arguments,
 
-        TimerAction(period=1.0, actions=[cartographer_node]),
-        TimerAction(period=2.0, actions=[occupancy_grid_node]),
-        TimerAction(period=3.0, actions=[nav2_launch]),
-        TimerAction(period=3.5, actions=[joy_node]),
-        TimerAction(period=6.0, actions=[rviz_node, gamepad_teleop_node]),
+        TimerAction(period=0.2, actions=[cartographer_node]),
+        TimerAction(period=3.0, actions=[occupancy_grid_node]),
+        TimerAction(period=6.0, actions=[nav2_launch]),
+        TimerAction(period=9.0, actions=[joy_node]),
+        TimerAction(period=11.0, actions=[rviz_node]),
+        TimerAction(period=12.0, actions=[gamepad_teleop_node]),
 
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),

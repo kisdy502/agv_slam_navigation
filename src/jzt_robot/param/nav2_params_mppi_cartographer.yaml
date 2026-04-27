@@ -1,4 +1,4 @@
-### Nav2 参数配置文件 - Cartographer定位版本 MPPI局部规划器，适合差速底盘(可用，速度只有0.3不到待优化)
+### Nav2 参数配置文件 - Cartographer定位版本 MPPI局部规划器，适合差速底盘
 
 ## 定位恢复和行为服务器
 behavior_server:
@@ -18,7 +18,7 @@ behavior_server:
     global_frame: map
     robot_base_frame: base_link
     transform_tolerance: 1.5 # 对应原AMCL的transform_tolerance
-    use_sim_time: true
+    use_sim_time: True
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.5
     min_rotational_vel: 0.4
@@ -70,7 +70,7 @@ controller_server:
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5
+      required_movement_radius: 0.5  # 这两个参数：10 秒内移动距离小于 0.5m
       movement_time_allowance: 10.0
 
     general_goal_checker:
@@ -84,19 +84,19 @@ controller_server:
       time_steps: 36  #预测更远
       model_dt: 0.05
       batch_size: 2000
-      vx_std: 0.2
+      vx_std: 0.3
       vy_std: 0.2
       wz_std: 0.4
       vx_max: 1.5
       vx_min: -0.35
       vy_max: 0.01    # 差速，不需要横向移动，平移
       wz_max: 1.2     # 角速度
-      ax_max: 2.0                   # 必须显式设置！从0加速到1.5只需0.75s
+      ax_max: 2.0     # 必须显式设置！从0加速到1.5只需0.75s
       ax_min: -2.0
-      iteration_count: 2
-      prune_distance: 1.7
+      iteration_count: 1
+      prune_distance: 2.7
       transform_tolerance: 0.3  #变换容差，仿真调大点
-      temperature: 0.5
+      temperature: 0.6
       gamma: 0.02
       motion_model: "DiffDrive"
       visualize: false
@@ -107,26 +107,26 @@ controller_server:
         min_turning_r: 0.2
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 4.0
       GoalCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 1.4
       GoalAngleCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 3.0
         threshold_to_consider: 0.5
-      PreferForwardCritic:
-        enabled: true
+      PreferForwardCritic:   #负责加速
+        enabled: True
         cost_power: 1
-        cost_weight: 5.0
+        cost_weight: 10.0
         threshold_to_consider: 0.5
-      # ObstaclesCritic:
-      #   enabled: true
+      # ObstaclesCritic:    #负责避障
+      #   enabled: True
       #   cost_power: 1
       #   repulsion_weight: 1.5
       #   critical_weight: 20.0
@@ -135,30 +135,30 @@ controller_server:
       #   collision_margin_distance: 0.1
       #   near_goal_distance: 0.5
       CostCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 1.81
         critical_cost: 300.0
-        consider_footprint: true
-        collision_cost: 1000000.0
+        consider_footprint: True
+        collision_cost: 100000.0
         near_goal_distance: 1.0
       PathAlignCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
-        cost_weight: 10.0
+        cost_weight: 8.0
         max_path_occupancy_ratio: 0.05
         trajectory_point_step: 3
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
       PathFollowCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 5.0
         offset_from_furthest: 5
         threshold_to_consider: 1.4
       PathAngleCritic:
-        enabled: true
+        enabled: True
         cost_power: 1
         cost_weight: 2.0
         offset_from_furthest: 4
@@ -166,7 +166,7 @@ controller_server:
         max_angle_to_furthest: 1.0
         forward_preference: true
       # VelocityDeadbandCritic:
-      #   enabled: true
+      #   enabled: True
       #   cost_power: 1
       #   cost_weight: 35.0
       #   deadband_velocities: [0.05, 0.05, 0.05]
@@ -189,7 +189,7 @@ local_costmap:
       global_frame: odom
       robot_base_frame: base_link
       use_sim_time: True
-      rolling_window: true
+      rolling_window: True
       width: 6
       height: 6
       resolution: 0.05
@@ -210,9 +210,9 @@ local_costmap:
           clearing: True
           marking: True
           data_type: "LaserScan"
-          raytrace_max_range: 5.0
+          raytrace_max_range: 3.0
           raytrace_min_range: 0.0
-          obstacle_max_range: 4.5
+          obstacle_max_range: 2.5
           obstacle_min_range: 0.0
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
@@ -236,7 +236,7 @@ global_costmap:
       use_sim_time: True
       footprint: "[[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]]"
       resolution: 0.05
-      track_unknown_space: true
+      track_unknown_space: True
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
@@ -260,29 +260,13 @@ global_costmap:
         cost_scaling_factor: 3.0
         inflation_radius: 0.45
       always_send_full_costmap: True
+
   global_costmap_client:
     ros__parameters:
       use_sim_time: True
   global_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
-
-## 速度平滑器 (保持原有配置)
-velocity_smoother:
-  ros__parameters:
-    use_sim_time: True
-    smoothing_frequency: 20.0
-    scale_velocities: False
-    feedback: "OPEN_LOOP"
-    max_velocity: [0.26, 0.0, 1.0]
-    min_velocity: [-0.26, 0.0, -1.0]
-    max_accel: [1.0, 0.0, 1.2]
-    max_decel: [-1.0, 0.0, -1.2]
-    odom_topic: "odom"
-    odom_duration: 0.1
-    deadband_velocity: [0.0, 0.0, 0.0]
-    velocity_timeout: 1.0
-
 ## 路点跟踪器 (保持原有配置)
 waypoint_follower:
   ros__parameters:

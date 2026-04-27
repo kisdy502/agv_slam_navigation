@@ -9,9 +9,9 @@ public:
     this->declare_parameter<int>("axis_linear", 1);
     this->declare_parameter<int>("axis_angular", 0);
     this->declare_parameter<double>("deadzone", 0.05);
-    this->declare_parameter<int>("btn_stop", 1);
-    this->declare_parameter<int>("btn_speed_up", 0);   // X
-    this->declare_parameter<int>("btn_speed_down", 3); // Y
+    this->declare_parameter<int>("btn_stop", 0);       // A
+    this->declare_parameter<int>("btn_speed_up", 3);   // X
+    this->declare_parameter<int>("btn_speed_down", 4); // Y
 
     this->get_parameter("axis_linear", axis_linear_);
     this->get_parameter("axis_angular", axis_angular_);
@@ -41,20 +41,23 @@ private:
     if (twist.linear.x == 0.0 && twist.linear.y == 0.0 &&
         twist.linear.z == 0.0 && twist.angular.x == 0.0 &&
         twist.angular.y == 0.0 && twist.angular.z == 0.0) {
-      RCLCPP_INFO(this->get_logger(), "发送停止速度控制！，第%d次。",
-                  stop_twist_count_);
+      RCLCPP_INFO(this->get_logger(), "发送了停止速度控制！");
     }
   }
   // 适配北通
   bool hasAnyInput(const sensor_msgs::msg::Joy::SharedPtr &msg) const {
     // 检查所有轴是否有超出死区的
     for (size_t i = 0; i < msg->axes.size(); i++) {
-      // RCLCPP_INFO(this->get_logger(), "axes[i]%f,deadzone_:%f", msg->axes[i],deadzone_);
+      auto axesValue = msg->axes[i];
+      // LT RT 特殊处理，这两个不压下去时候，默认是1，按到底是-1
       if (i == 4 || i == 5) {
-        continue;
-      }
-      if (std::abs(msg->axes[i]) > deadzone_) {
-        return true;
+        if (axesValue < 1.0 - deadzone_) {
+          return true;
+        }
+      } else {
+        if (std::abs(axesValue) > deadzone_) {
+          return true;
+        }
       }
     }
 
@@ -103,25 +106,18 @@ private:
 
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg) {
     const bool has_input = hasAnyInput(msg);
-    // RCLCPP_INFO(this->get_logger(), "has_input=%s, ", has_input? "YES" :
-    // "NO");
-    //  如果没有输入，且上一次已经发布了零速度，就不再继续发布
-    if (!has_input) {
-      // 构造零速度
-      geometry_msgs::msg::Twist zero_twist;
-      // 如果上一次发布的速度不是零，或者停止计数器未满，则发布零速并更新计数
-      if (stop_twist_count_ < 5) {
-        publishVelocity(zero_twist);
-        stop_twist_count_++;
-        return;
-      }
-      // 若已连续发布多次零速，则不再重复发布
-      return;
-    }
-    // RCLCPP_INFO(this->get_logger(), "has_input=%s, ", has_input ? "YES" : "NO");
-    stop_twist_count_ = 0; // 只要有输入，就重置停止计数器
 
     auto twist = geometry_msgs::msg::Twist();
+    if (!has_input) {
+      if (joy_no_trigger_send_zero < 6) {
+        joy_no_trigger_send_zero++;
+        RCLCPP_INFO(this->get_logger(),
+                    "摇杆松开了，没有发零速度，发一个，让机器人停下！");
+        publishVelocity(twist);
+      }
+      return;
+    }
+    joy_no_trigger_send_zero = 0;
 
     // 紧急停止 (A键)
     if (btn_stop_ >= 0 && btn_stop_ < static_cast<int>(msg->buttons.size())) {
@@ -183,10 +179,10 @@ private:
   int speed_level_ = 1; // 默认中速 (0=低速, 1=中速, 2=高速)
   bool speed_up_pressed_ = false;
   bool speed_down_pressed_ = false;
-  int stop_twist_count_ = 100; // 连续发布停止命令的次数，初始值设置为100，防止没有动遥控器就发停止速度指令
-
   rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  int joy_no_trigger_send_zero =
+      10; // 摇杆松开时候发送0速度 是否发送过了，发送过了，后面就不发了
 };
 
 int main(int argc, char *argv[]) {
