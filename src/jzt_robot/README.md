@@ -99,3 +99,12 @@ colcon build --packages-select jzt_robot
   frame_id: imu_link
 ```
 
+## 修复了问题
+```
+1启动导航节点，地图不现实，日志提示odom到base_footprint坐标不存在，底盘urdf配置问题，imu的frame id需要设置成imu_link
+     localization_2d.lua参数问题，参考官方backup_2d.lua配置，补齐参数
+1导航节点启动时候，rviz中雷达轮廓和地图边缘不贴合，
+  差速底盘urdf配置有问题，lidar的frame id设置成laser_scan
+  localization_2d.lua参数问题，参考官方backpack_2d_localization.lua，补齐参数
+```
+

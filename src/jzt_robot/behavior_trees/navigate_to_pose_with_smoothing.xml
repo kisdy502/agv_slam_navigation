@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+            <PipelineSequence name="NavigateWithReplanning">
+
+                <!-- 1. 全局路径规划 -->
+                <RateController hz="1.0">
+                    <RecoveryNode number_of_retries="1" name="ComputePath">
+                        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased" />
+                        <ClearEntireCostmap name="ClearGlobalCostmap"
+                            service_name="global_costmap/clear_entirely_global_costmap" />
+                    </RecoveryNode>
+                </RateController>
+
+                <!-- 2. 🔴 路径平滑：在全局路径生成后、局部跟踪前插入 -->
+                <SmoothPath unsmoothed_path="{path}" smoothed_path="{smoothed_path}"
+                    smoother_id="simple_smoother" max_smoothing_duration="3.0"
+                    check_for_collision="true" />
+
+                <!-- 3. 局部路径跟踪（FollowPath 会读取 smoothed_path） -->
+                <RecoveryNode number_of_retries="1" name="FollowPath">
+                    <FollowPath path="{smoothed_path}" controller_id="FollowPath" />
+                    <ClearEntireCostmap name="ClearLocalCostmap"
+                        service_name="local_costmap/clear_entirely_local_costmap" />
+                </RecoveryNode>
+
+            </PipelineSequence>
+
+            <!-- 失败恢复行为 -->
+            <ReactiveFallback name="RecoveryFallback">
+                <GoalUpdated />
+                <SequenceStar name="RecoveryActions">
+                    <ClearEntireCostmap name="ClearLocalCostmap"
+                        service_name="local_costmap/clear_entirely_local_costmap" />
+                    <ClearEntireCostmap name="ClearGlobalCostmap"
+                        service_name="global_costmap/clear_entirely_global_costmap" />
+                    <Spin spin_dist="1.57" />
+                    <Wait wait_duration="5.0" />
+                </SequenceStar>
+            </ReactiveFallback>
+        </RecoveryNode>
+    </BehaviorTree>
+</root>

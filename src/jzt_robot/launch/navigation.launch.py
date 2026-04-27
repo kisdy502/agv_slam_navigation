@@ -45,7 +45,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'params_file',
-            default_value=os.path.join(pkg_share, 'param', 'nav2_params_dwb_cartographer.yaml'),
+            default_value=os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer.yaml'),
             description='Nav2参数文件路径，默认MPPI，可指定DWB: $(find-pkg-prefix jzt_robot)/share/jzt_robot/param/nav2_params_dwb_cartographer.yaml'
         ),
     ]
@@ -142,7 +142,7 @@ def generate_launch_description():
         TimerAction(period=2.0, actions=[occupancy_grid_node]),
         TimerAction(period=3.0, actions=[nav2_launch]),
         TimerAction(period=3.5, actions=[joy_node]),
-        TimerAction(period=4.0, actions=[rviz_node, gamepad_teleop_node]),
+        TimerAction(period=6.0, actions=[rviz_node, gamepad_teleop_node]),
 
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),
