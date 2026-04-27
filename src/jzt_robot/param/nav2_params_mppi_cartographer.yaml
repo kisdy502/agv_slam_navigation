@@ -81,10 +81,10 @@ controller_server:
       
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 36  #预测更远
+      time_steps: 60  #预测更远
       model_dt: 0.05
       batch_size: 2000
-      vx_std: 0.3
+      vx_std: 0.5
       vy_std: 0.2
       wz_std: 0.4
       vx_max: 1.5
@@ -96,7 +96,7 @@ controller_server:
       iteration_count: 1
       prune_distance: 2.7
       transform_tolerance: 0.3  #变换容差，仿真调大点
-      temperature: 0.6
+      temperature: 0.8
       gamma: 0.02
       motion_model: "DiffDrive"
       visualize: false
@@ -123,24 +123,24 @@ controller_server:
       PreferForwardCritic:   #负责加速
         enabled: True
         cost_power: 1
-        cost_weight: 10.0
+        cost_weight: 20.0
         threshold_to_consider: 0.5
-      # ObstaclesCritic:    #负责避障
-      #   enabled: True
-      #   cost_power: 1
-      #   repulsion_weight: 1.5
-      #   critical_weight: 20.0
-      #   consider_footprint: false
-      #   collision_cost: 10000.0
-      #   collision_margin_distance: 0.1
-      #   near_goal_distance: 0.5
+      ObstaclesCritic:    #负责避障
+        enabled: True
+        cost_power: 1
+        repulsion_weight: 1.5
+        critical_weight: 8.0
+        consider_footprint: false
+        collision_cost: 10000.0
+        collision_margin_distance: 0.1
+        near_goal_distance: 0.5
       CostCritic:
         enabled: True
         cost_power: 1
-        cost_weight: 1.81
-        critical_cost: 300.0
+        cost_weight: 1.0
+        critical_cost: 150.0
         consider_footprint: True
-        collision_cost: 100000.0
+        collision_cost: 30000.0
         near_goal_distance: 1.0
       PathAlignCritic:
         enabled: True
@@ -339,3 +339,19 @@ bt_navigator:
 bt_navigator_rclcpp_node:
   ros__parameters:
     use_sim_time: True
+
+
+## 最大速度一直是0.5米、秒，原来是没加velocity_smoother配置，导致用的默认配置，最大速度就是0.5
+velocity_smoother:
+  ros__parameters:
+    smoothing_frequency: 20.0
+    scale_velocities: False
+    feedback: "OPEN_LOOP"
+    max_velocity: [1.5, 0.0, 1.2]      # [vx_max, vy_max, wz_max]
+    min_velocity: [-0.35, 0.0, -1.2]   # [vx_min, vy_min, wz_min]
+    max_accel: [2.5, 0.0, 3.2]         # [ax_max, ay_max, aw_max]
+    min_accel: [-2.5, 0.0, -3.2]       # [ax_min, ay_min, aw_min]
+    odom_topic: "/odom"
+    odom_duration: 0.1
+    deadband_velocity: [0.0, 0.0, 0.0]
+    velocity_timeout: 1.0
