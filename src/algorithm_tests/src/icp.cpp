@@ -1,3 +1,18 @@
+
+/**
+ * ICP的数学本质
+ *  源点云：P 目标点云：Q
+    目标：找到旋转矩阵 
+    R
+    R 和平移向量 
+    t
+    t，最小化误差
+    求解R和t的闭式解
+    计算质心
+    去质心化
+    构建协方差矩阵
+
+ */
 #include "icp.hpp"
 #include <iostream>
 #include <cmath>

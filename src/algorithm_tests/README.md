@@ -34,3 +34,7 @@ ros2 run algorithm_tests algorithm_test_node --ros-args -p type:=matrix
 1. 在 `include/` 下添加对应的 hpp 头文件
 2. 在 `src/` 下添加 cpp 实现文件和 `test()` 方法
 3. 在 `src/main.cpp` 中添加对应的类型判断分支
+
+
+## IPC算法说明
+![alt text](images/image.png)

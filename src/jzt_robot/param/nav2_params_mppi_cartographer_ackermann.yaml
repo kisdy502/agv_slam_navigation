@@ -6,9 +6,9 @@ behavior_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
-    spin:
-      plugin: "nav2_behaviors/Spin"
+    behavior_plugins: ["backup", "drive_on_heading", "wait"]
+    # spin:
+    #   plugin: "nav2_behaviors/Spin"   #阿克曼原地旋转无效，会卡住
     backup:
       plugin: "nav2_behaviors/BackUp"
     drive_on_heading:
@@ -91,20 +91,20 @@ controller_server:
       vx_min: -0.35
       vy_max: 0.01    # 差速，不需要横向移动，平移
       wz_max: 1.2     # 角速度
-      ax_max: 2.0     # 必须显式设置！从0加速到1.5只需0.75s
-      ax_min: -2.0
+      ax_max: 1.2     # 必须显式设置！从0加速到1.5只需0.75s
+      ax_min: -1.0
       iteration_count: 1
       prune_distance: 2.7
       transform_tolerance: 0.3  #变换容差，仿真调大点
       temperature: 0.5
       gamma: 0.02
-      motion_model: "DiffDrive"
+      motion_model: "Ackermann"
       visualize: false
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
-      # AckermannConstraints:  #差速底盘，这个没用
-      #   min_turning_r: 0.2
+      AckermannConstraints:
+        min_turning_r: 0.73
       critics: ["ConstraintCritic", "CostCritic", "GoalCritic", "GoalAngleCritic", "PathAlignCritic", "PathFollowCritic", "PathAngleCritic", "PreferForwardCritic"]
       ConstraintCritic:
         enabled: True
@@ -193,7 +193,7 @@ local_costmap:
       width: 6
       height: 6
       resolution: 0.05
-      footprint: "[[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]]"
+      footprint: "[[-0.32, -0.22], [-0.32, 0.22], [0.32, 0.22], [0.32, -0.22]]"
       inflation_radius: 0.35
       plugins: ["obstacle_layer", "inflation_layer"]
       inflation_layer:

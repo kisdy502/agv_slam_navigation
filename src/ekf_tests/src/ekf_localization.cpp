@@ -11,14 +11,14 @@ EKFLocalization::EKFLocalization() {
 Eigen::Matrix3d EKFLocalization::compute_Q(double dt) {
     // 过程噪声协方差矩阵 Q
     Eigen::Matrix3d Q = Eigen::Matrix3d::Zero();
-    Q(0, 0) = q_v_ * q_v_ * dt * dt;
-    Q(1, 1) = q_v_ * q_v_ * dt * dt;
-    Q(2, 2) = q_omega_ * q_omega_ * dt * dt;
+    Q(0, 0) = q_v_ * q_v_ * dt * dt;  // x方向过程噪声
+    Q(1, 1) = q_v_ * q_v_ * dt * dt;  // y方向过程噪声  
+    Q(2, 2) = q_omega_ * q_omega_ * dt * dt;  // 角度过程噪声
     return Q;
 }
 
 Eigen::Matrix<double, 2, 3> EKFLocalization::compute_H() {
-    // 观测雅可比矩阵：直接观测 x, y
+    // 观测雅可比矩阵：直接观测 x, y  观测z只与状态中的x,y相关，与角度θ无关。
     Eigen::Matrix<double, 2, 3> H;
     H << 1, 0, 0,
          0, 1, 0;
