@@ -592,11 +592,11 @@
             <wheel_width>0.08</wheel_width>
 
             <!-- 力矩与速度 -->
-            <max_wheel_torque>2000</max_wheel_torque>
-            <max_wheel_acceleration>50.0</max_wheel_acceleration>
+            <max_wheel_torque>50</max_wheel_torque>
+            <max_wheel_acceleration>10.0</max_wheel_acceleration>
             <max_steer>0.523598</max_steer>
-            <max_speed>3.0</max_speed>
-            <steering_speed>3.0</steering_speed>
+            <max_speed>1.5</max_speed>
+            <steering_speed>1.5</steering_speed>
 
             <!-- 输出 -->
             <publish_odom>true</publish_odom>
@@ -664,7 +664,7 @@
         </physics>
     </gazebo>
 
-    <gazebo>
+    <!-- <gazebo>
         <plugin name="gazebo_ros_joint_state_publisher"
             filename="libgazebo_ros_joint_state_publisher.so">
             <ros>
@@ -679,6 +679,6 @@
             <joint_name>left_rear_wheel_joint</joint_name>
             <joint_name>right_rear_wheel_joint</joint_name>
         </plugin>
-    </gazebo>
+    </gazebo> -->
 
 </robot>

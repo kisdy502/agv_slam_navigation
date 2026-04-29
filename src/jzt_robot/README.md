@@ -4,7 +4,7 @@ AGV 机器人仿真包，支持 Gazebo 建图和导航。
 
 ## 启动顺序
 
-### 1. 启动 Gazebo 仿真（始终运行）
+### 1. 启动 Gazebo 差速仿真（始终运行）
 
 ```bash
 conda deactivate
@@ -12,7 +12,19 @@ source install/setup.bash
 ros2 launch jzt_robot gazebo_diff.launch.py
 ```
 
+### 1. 启动 Gazebo 阿克曼仿真（始终运行）差速，阿克曼二选一
+
+```bash
+conda deactivate
+source install/setup.bash
+ros2 launch jzt_robot gazebo_ackermann.launch.py
+```
+
 > **重要**: Gazebo 启动后保持运行，不要关闭。无论建图还是导航都基于此仿真环境。
+> **重要**: 阿克曼的底盘，移动控制话题和差速不一样，用的是
+> **重要**: ros2_control (ackermann_steering_controller)  /ackermann_steering_controller/reference_unstamped
+> **重要**: ros2 topic pub /ackermann_steering_controller/reference_unstamped geometry_msgs/msg/Twist '{linear: {x: 0.6}, angular: {z: 0.4}}' --rate 5
+
 
 ---
 
