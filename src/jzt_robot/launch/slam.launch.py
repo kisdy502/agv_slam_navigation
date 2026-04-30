@@ -37,7 +37,7 @@ def generate_launch_description():
     declared_arguments = [
         DeclareLaunchArgument(
             'configuration_basename',
-            default_value='gazebo_2d.lua',
+            default_value='jzt_robot_2d.lua',
             description='Cartographer Lua配置文件'
         ),
     ]
@@ -102,6 +102,10 @@ def generate_launch_description():
         executable='gamepad_teleop_node',
         name='gamepad_teleop_node',
         output='screen',
+        parameters=[{
+            # 'cmd_topic': '/ackermann_steering_controller/reference_unstamped',
+            'cmd_topic': '/cmd_vel'
+        }]
     )
 
     return LaunchDescription([

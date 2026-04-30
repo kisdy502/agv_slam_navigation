@@ -8,11 +8,11 @@ Nav2 导航 + Cartographer定位 + RViz 可视化启动文件
 
     # 终端2: 再启动导航（默认 MPPI 控制器）
     ros2 launch jzt_robot navigation.launch.py \
-        pbstream_file:=/home/kisdy/maps/cartographer_map.pbstream
+        pbstream_file:=/home/kisdy/maps/jz_map.pbstream
 
     # 使用 DWB 控制器
     ros2 launch jzt_robot navigation.launch.py \
-        pbstream_file:=/home/kisdy/maps/cartographer_map.pbstream \
+        pbstream_file:=/home/kisdy/maps/jz_map.pbstream \
         controller:=dwb
 """
 
@@ -30,7 +30,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
     rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
-    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer.yaml'))
+    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_ackermann.yaml'))
     
     cartographer_config_dir = os.path.join(pkg_share, 'config')
     
@@ -38,7 +38,7 @@ def generate_launch_description():
     declared_arguments = [
         DeclareLaunchArgument(
             'pbstream_file',
-            default_value='/home/kisdy/maps/cartographer_map.pbstream',
+            default_value='/home/kisdy/maps/jz_map.pbstream',
             description='Cartographer pbstream地图文件'
         ),
         DeclareLaunchArgument(
@@ -118,6 +118,7 @@ def generate_launch_description():
         parameters=[{
             'device_id': 0,
             'autorepeat_rate': 20.0,
+            'use_sim_time': True,
         }],
     )
 
@@ -127,6 +128,11 @@ def generate_launch_description():
         executable='gamepad_teleop_node',
         name='gamepad_teleop_node',
         output='screen',
+        parameters=[{
+            'cmd_topic': '/ackermann_steering_controller/reference_unstamped',
+            'use_sim_time': True,
+            # 'cmd_topic': '/cmd_vel'
+        }]
     )
 
     return LaunchDescription([

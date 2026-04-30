@@ -1,38 +1,38 @@
 <?xml version="1.0"?>
-<robot name="jzAckermannRobot">
+<robot name="jzMecanumRobot">
 
     <link name="base_footprint" />
 
     <joint name="base_joint" type="fixed">
         <parent link="base_footprint" />
         <child link="base_link" />
-        <origin xyz="0.0 0.0 0.12" rpy="0 0 0" />
+        <origin xyz="0.0 0.0 0.108" rpy="0 0 0" />
     </joint>
 
     <link name="base_link">
         <visual>
-            <origin xyz="0 0 0.16" rpy="0 0 0" />
+            <origin xyz="0 0 0.14" rpy="0 0 0" />
             <geometry>
-                <box size="1.1 0.56 0.32" />
+                <box size="1.1 0.56 0.28" />
             </geometry>
-            <material name="dark_red">
-                <color rgba="0.55 0.0 0.0 1.0" />
+            <material name="white">
+                <color rgba="0.95 0.95 0.95 1.0" />
             </material>
         </visual>
         <collision>
-            <origin xyz="0 0 0.16" rpy="0 0 0" />
+            <origin xyz="0 0 0.14" rpy="0 0 0" />
             <geometry>
-                <box size="1.1 0.56 0.32" />
+                <box size="1.1 0.56 0.28" />
             </geometry>
         </collision>
         <inertial>
             <mass value="15.0" />
-            <inertia ixx="0.45" ixy="0" ixz="0" iyy="1.25" iyz="0" izz="1.55" />
+            <inertia ixx="0.35" ixy="0" ixz="0" iyy="0.95" iyz="0" izz="1.25" />
         </inertial>
     </link>
 
     <gazebo reference="base_link">
-        <material>Gazebo/Red</material>
+        <material>Gazebo/White</material>
     </gazebo>
 
     <link name="laser_link">
@@ -60,7 +60,7 @@
     <joint name="laser_joint" type="fixed">
         <parent link="base_link" />
         <child link="laser_link" />
-        <origin xyz="0.40 0 0.36" rpy="0 0 0" />
+        <origin xyz="0.40 0 0.32" rpy="0 0 0" />
     </joint>
 
     <gazebo reference="laser_link">
@@ -71,7 +71,7 @@
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <box size="0.12 0.03 0.03" />
+                <box size="0.03 0.12 0.03" />
             </geometry>
             <material name="black">
                 <color rgba="0.1 0.1 0.1 1.0" />
@@ -80,7 +80,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0" />
             <geometry>
-                <box size="0.12 0.03 0.03" />
+                <box size="0.03 0.12 0.03" />
             </geometry>
         </collision>
         <inertial>
@@ -94,13 +94,13 @@
     <joint name="camera_joint" type="fixed">
         <parent link="base_link" />
         <child link="camera_link" />
-        <origin xyz="0.56 0 0.25" rpy="0 0 0" />
+        <origin xyz="0.536 0 0.14" rpy="0 0 0" />
     </joint>
 
     <joint name="camera_optical_joint" type="fixed">
         <parent link="camera_link" />
         <child link="camera_optical_link" />
-        <origin xyz="0.06 0 0" rpy="-1.570796 0 -1.570796" />
+        <origin xyz="0.015 0 0" rpy="-1.570796 0 -1.570796" />
     </joint>
 
     <gazebo reference="camera_link">
@@ -151,7 +151,7 @@
     </link>
 
     <joint name="imu_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 0.14" rpy="0 0 0" />
         <parent link="base_link" />
         <child link="imu_link" />
     </joint>
@@ -226,292 +226,270 @@
         </sensor>
     </gazebo>
 
-    <link name="left_rear_wheel_link">
+
+    <link name="front_left_wheel_link">
         <visual>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
-            <material name="dark_grey">
-                <color rgba="0.3 0.3 0.3 1.0" />
+            <material name="mecanum_wheel">
+                <color rgba="0.2 0.2 0.2 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="0.785398 1.57079 0" />
+            <geometry>
+                <box size="0.15 0.02 0.02" />
+            </geometry>
+            <material name="roller">
+                <color rgba="0.4 0.4 0.4 1.0" />
             </material>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
         </collision>
         <inertial>
-            <mass value="1.5" />
-            <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0054" />
+            <mass value="1.2" />
+            <inertia ixx="0.0025" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0045" />
         </inertial>
     </link>
 
-    <link name="right_rear_wheel_link">
+    <link name="front_right_wheel_link">
         <visual>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
-            <material name="dark_grey">
-                <color rgba="0.3 0.3 0.3 1.0" />
+            <material name="mecanum_wheel">
+                <color rgba="0.2 0.2 0.2 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="-0.785398 1.57079 0" />
+            <geometry>
+                <box size="0.15 0.02 0.02" />
+            </geometry>
+            <material name="roller">
+                <color rgba="0.4 0.4 0.4 1.0" />
             </material>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
         </collision>
         <inertial>
-            <mass value="1.5" />
-            <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0054" />
+            <mass value="1.2" />
+            <inertia ixx="0.0025" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0045" />
         </inertial>
     </link>
 
-    <link name="front_left_steer_link">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.03 0.03" />
-            </geometry>
-            <material name="grey">
-                <color rgba="0.7 0.7 0.7 1.0" />
-            </material>
-        </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.001 0.001 0.001" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="0.5" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
-        </inertial>
-    </link>
-
-    <link name="front_right_steer_link">
-        <visual>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.04 0.03 0.03" />
-            </geometry>
-            <material name="grey">
-                <color rgba="0.7 0.7 0.7 1.0" />
-            </material>
-        </visual>
-        <collision>
-            <origin xyz="0 0 0" rpy="0 0 0" />
-            <geometry>
-                <box size="0.001 0.001 0.001" />
-            </geometry>
-        </collision>
-        <inertial>
-            <mass value="0.5" />
-            <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
-        </inertial>
-    </link>
-
-    <link name="left_front_wheel_link">
+    <link name="rear_left_wheel_link">
         <visual>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
-            <material name="dark_grey">
-                <color rgba="0.3 0.3 0.3 1.0" />
+            <material name="mecanum_wheel">
+                <color rgba="0.2 0.2 0.2 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="-0.785398 1.57079 0" />
+            <geometry>
+                <box size="0.15 0.02 0.02" />
+            </geometry>
+            <material name="roller">
+                <color rgba="0.4 0.4 0.4 1.0" />
             </material>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
         </collision>
         <inertial>
-            <mass value="1.5" />
-            <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0054" />
+            <mass value="1.2" />
+            <inertia ixx="0.0025" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0045" />
         </inertial>
     </link>
 
-    <link name="right_front_wheel_link">
+    <link name="rear_right_wheel_link">
         <visual>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
-            <material name="dark_grey">
-                <color rgba="0.3 0.3 0.3 1.0" />
+            <material name="mecanum_wheel">
+                <color rgba="0.2 0.2 0.2 1.0" />
+            </material>
+        </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="0.785398 1.57079 0" />
+            <geometry>
+                <box size="0.15 0.02 0.02" />
+            </geometry>
+            <material name="roller">
+                <color rgba="0.4 0.4 0.4 1.0" />
             </material>
         </visual>
         <collision>
             <origin xyz="0 0 0" rpy="1.57079 0 0" />
             <geometry>
-                <cylinder length="0.08" radius="0.12" />
+                <cylinder length="0.08" radius="0.108" />
             </geometry>
         </collision>
         <inertial>
-            <mass value="1.5" />
-            <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0054" />
+            <mass value="1.2" />
+            <inertia ixx="0.0025" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.0045" />
         </inertial>
     </link>
 
-    <joint name="front_left_steer_joint" type="revolute">
+    <joint name="front_left_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="front_left_steer_link" />
+        <child link="front_left_wheel_link" />
         <origin xyz="0.40 0.28 0" rpy="0 0 0" />
-        <axis xyz="0 0 1" />
-        <limit lower="-0.523598" upper="0.523598" effort="100" velocity="3.0" />
-        <dynamics damping="0.05" friction="0.01" />
+        <axis xyz="0 1 0" />
     </joint>
 
-    <joint name="front_right_steer_joint" type="revolute">
+    <joint name="front_right_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="front_right_steer_link" />
+        <child link="front_right_wheel_link" />
         <origin xyz="0.40 -0.28 0" rpy="0 0 0" />
-        <axis xyz="0 0 1" />
-        <limit lower="-0.523598" upper="0.523598" effort="100" velocity="3.0" />
-        <dynamics damping="0.05" friction="0.01" />
+        <axis xyz="0 1 0" />
     </joint>
 
-    <joint name="left_rear_wheel_joint" type="continuous">
+    <joint name="rear_left_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="left_rear_wheel_link" />
+        <child link="rear_left_wheel_link" />
         <origin xyz="-0.40 0.28 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
     </joint>
 
-    <joint name="right_rear_wheel_joint" type="continuous">
+    <joint name="rear_right_wheel_joint" type="continuous">
         <parent link="base_link" />
-        <child link="right_rear_wheel_link" />
+        <child link="rear_right_wheel_link" />
         <origin xyz="-0.40 -0.28 0" rpy="0 0 0" />
         <axis xyz="0 1 0" />
     </joint>
 
-    <joint name="left_front_wheel_joint" type="continuous">
-        <parent link="front_left_steer_link" />
-        <child link="left_front_wheel_link" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-    </joint>
-
-    <joint name="right_front_wheel_joint" type="continuous">
-        <parent link="front_right_steer_link" />
-        <child link="right_front_wheel_link" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <axis xyz="0 1 0" />
-    </joint>
-
-    <gazebo reference="left_rear_wheel_link">
+    <gazebo reference="front_left_wheel_link">
         <material>Gazebo/DarkGrey</material>
         <collision>
             <surface>
                 <friction>
                     <ode>
-                        <mu1>10.0</mu1>
-                        <mu2>10.0</mu2>
+                        <mu1>0.8</mu1>
+                        <mu2>0.03</mu2>
+                        <fdir1>
+                            <x>0.7071</x>
+                            <y>0.7071</y>
+                            <z>0.0</z>
+                        </fdir1>
                         <kp value="10000000.0" />
                         <kd value="1.0" />
-                        <fdir1 value="1 0 0" />
                     </ode>
                 </friction>
                 <contact>
                     <ode>
-                        <kp>1e8</kp>
+                        <kp>1e7</kp>
                         <kd>1.0</kd>
                         <min_depth>0.001</min_depth>
                     </ode>
                 </contact>
-                <bounce>
-                    <restitution_coefficient>0.0</restitution_coefficient>
-                </bounce>
             </surface>
         </collision>
     </gazebo>
 
-    <gazebo reference="right_rear_wheel_link">
+    <gazebo reference="front_right_wheel_link">
         <material>Gazebo/DarkGrey</material>
         <collision>
             <surface>
                 <friction>
                     <ode>
-                        <mu1>10.0</mu1>
-                        <mu2>10.0</mu2>
+                        <mu1>0.8</mu1>
+                        <mu2>0.03</mu2>
+                        <fdir1>
+                            <x>0.7071</x>
+                            <y>-0.7071</y>
+                            <z>0.0</z>
+                        </fdir1>
                         <kp value="10000000.0" />
                         <kd value="1.0" />
-                        <fdir1 value="1 0 0" />
                     </ode>
                 </friction>
                 <contact>
                     <ode>
-                        <kp>1e8</kp>
+                        <kp>1e7</kp>
                         <kd>1.0</kd>
                         <min_depth>0.001</min_depth>
                     </ode>
                 </contact>
-                <bounce>
-                    <restitution_coefficient>0.0</restitution_coefficient>
-                </bounce>
             </surface>
         </collision>
     </gazebo>
 
-    <gazebo reference="left_front_wheel_link">
+    <gazebo reference="rear_left_wheel_link">
         <material>Gazebo/DarkGrey</material>
         <collision>
             <surface>
                 <friction>
                     <ode>
-                        <mu1>10.0</mu1>
-                        <mu2>0.5</mu2>
+                        <mu1>0.8</mu1>
+                        <mu2>0.03</mu2>
+                        <fdir1>
+                            <x>0.7071</x>
+                            <y>-0.7071</y>
+                            <z>0.0</z>
+                        </fdir1>
                         <kp value="10000000.0" />
                         <kd value="1.0" />
-                        <fdir1 value="1 0 0" />
                     </ode>
                 </friction>
                 <contact>
                     <ode>
-                        <kp>1e8</kp>
+                        <kp>1e7</kp>
                         <kd>1.0</kd>
                         <min_depth>0.001</min_depth>
                     </ode>
                 </contact>
-                <bounce>
-                    <restitution_coefficient>0.0</restitution_coefficient>
-                </bounce>
             </surface>
         </collision>
     </gazebo>
 
-    <gazebo reference="right_front_wheel_link">
+    <gazebo reference="rear_right_wheel_link">
         <material>Gazebo/DarkGrey</material>
         <collision>
             <surface>
                 <friction>
                     <ode>
-                        <mu1>10.0</mu1>
-                        <mu2>0.5</mu2>
+                        <mu1>0.8</mu1>
+                        <mu2>0.03</mu2>
+                        <fdir1>
+                            <x>0.7071</x>
+                            <y>0.7071</y>
+                            <z>0.0</z>
+                        </fdir1>
                         <kp value="10000000.0" />
                         <kd value="1.0" />
-                        <fdir1 value="1 0 0" />
                     </ode>
                 </friction>
                 <contact>
                     <ode>
-                        <kp>1e8</kp>
+                        <kp>1e7</kp>
                         <kd>1.0</kd>
                         <min_depth>0.001</min_depth>
                     </ode>
                 </contact>
-                <bounce>
-                    <restitution_coefficient>0.0</restitution_coefficient>
-                </bounce>
             </surface>
         </collision>
     </gazebo>
-
 
     <gazebo reference="laser_link">
         <material>Gazebo/Purple</material>
@@ -532,7 +510,7 @@
                 </scan>
                 <range>
                     <min>0.15</min>
-                    <max>45.0</max>
+                    <max>15.0</max>
                     <resolution>0.01</resolution>
                 </range>
                 <noise>
@@ -560,9 +538,9 @@
 
     <gazebo>
         <physics type="ode">
-            <max_step_size>0.001</max_step_size>
+            <max_step_size>0.01</max_step_size>
             <real_time_factor>1.0</real_time_factor>
-            <real_time_update_rate>1000</real_time_update_rate>
+            <real_time_update_rate>100</real_time_update_rate>
         </physics>
     </gazebo>
 
@@ -571,46 +549,36 @@
             <plugin>gazebo_ros2_control/GazeboSystem</plugin>
         </hardware>
 
-        <joint name="front_left_steer_joint">
-            <command_interface name="position" />
-            <state_interface name="position" />
-            <state_interface name="velocity" />
-        </joint>
-
-        <joint name="front_right_steer_joint">
-            <command_interface name="position" />
-            <state_interface name="position" />
-            <state_interface name="velocity" />
-        </joint>
-
-        <joint name="left_rear_wheel_joint">
+        <joint name="front_left_wheel_joint">
             <command_interface name="velocity" />
             <state_interface name="position" />
             <state_interface name="velocity" />
         </joint>
 
-        <joint name="right_rear_wheel_joint">
+        <joint name="front_right_wheel_joint">
             <command_interface name="velocity" />
             <state_interface name="position" />
             <state_interface name="velocity" />
         </joint>
 
-        <joint name="left_front_wheel_joint">
+        <joint name="rear_left_wheel_joint">
+            <command_interface name="velocity" />
             <state_interface name="position" />
             <state_interface name="velocity" />
         </joint>
 
-        <joint name="right_front_wheel_joint">
+        <joint name="rear_right_wheel_joint">
+            <command_interface name="velocity" />
             <state_interface name="position" />
             <state_interface name="velocity" />
         </joint>
     </ros2_control>
 
-
     <gazebo>
         <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
             <parameters>
-                /home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/config/ackermann_controllers.yaml</parameters>
+                /home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/config/mecanum_controllers.yaml
+            </parameters>
         </plugin>
     </gazebo>
 

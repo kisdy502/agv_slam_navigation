@@ -9,8 +9,10 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(sensor_msgs REQUIRED)  # Joy message
+find_package(sensor_msgs REQUIRED)   # Joy message
 find_package(geometry_msgs REQUIRED) # Twist message
+find_package(nav_msgs REQUIRED)      # Odometry message
+find_package(tf2_ros REQUIRED)       # Transform broadcaster
 
 include_directories(
   include
@@ -28,9 +30,34 @@ ament_target_dependencies(gamepad_teleop_node
   geometry_msgs
 )
 
+# Odom Relay Node
+add_executable(odom_relay_node
+  src/odom_relay_node.cpp
+)
+
+ament_target_dependencies(odom_relay_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  tf2_ros
+)
+# cmd_vel_relay_node
+add_executable(cmd_vel_relay_node
+  src/cmd_vel_relay_node.cpp
+)
+
+ament_target_dependencies(cmd_vel_relay_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  tf2_ros
+)
+
 # Install executables
 install(TARGETS
   gamepad_teleop_node
+  odom_relay_node
+  cmd_vel_relay_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -62,6 +89,11 @@ install(DIRECTORY
 install(DIRECTORY
   world/
   DESTINATION share/${PROJECT_NAME}/world
+)
+
+install(DIRECTORY
+  behavior_trees/
+  DESTINATION share/${PROJECT_NAME}/behavior_trees
 )
 
 if(BUILD_TESTING)

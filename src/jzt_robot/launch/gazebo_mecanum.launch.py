@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-阿克曼底盘 Gazebo 仿真启动文件（gazebo_ros2_control 版本）
+麦克纳姆轮 Gazebo 仿真启动文件（gazebo_ros2_control 版本）
 """
 
 import os
@@ -19,8 +19,8 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     robot_name_in_model = "jzAckermannRobot01"
     package_name = "jzt_robot"
-    world_name = "jzt_factory.world"
-    urdf_name = "jzt_ackermann.urdf"
+    world_name = "jz_house.world"
+    urdf_name = "jzt_mecanum.urdf"
     gazebo_params_file_name = "gazebo_params.yaml"
 
     pkg_share = FindPackageShare(package_name).find(package_name)
@@ -66,8 +66,10 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         parameters=[
-            {"robot_description": open(urdf_model_path, 'r').read()},
-            {"use_sim_time": True}
+            {
+                "robot_description": open(urdf_model_path, 'r').read(),
+                'use_sim_time': True
+            },
         ],
     )
 
@@ -84,6 +86,9 @@ def generate_launch_description():
             "-Y", yaw_angle,
             "-robot_namespace", "/",  # 命名空间
         ],
+        parameters=[
+            {"use_sim_time": True}
+        ],
         output="screen",
     )
 
@@ -95,35 +100,36 @@ def generate_launch_description():
             "joint_state_broadcaster",
             "--controller-manager", "/controller_manager",
         ],
+        parameters=[
+            {"use_sim_time": True}
+        ],
         output="screen",
     )
 
-    load_ackermann_controller = Node(
+    # load_ackermann_controller = Node(
+    #     package="controller_manager",
+    #     executable="spawner",
+    #     arguments=[
+    #         "ackermann_steering_controller",
+    #         "--controller-manager", "/controller_manager",
+    #     ],
+    #     output="screen",
+    # )
+    
+    # 替换原来的 ackermann 控制器加载
+    load_mecanum_controller = Node(
         package="controller_manager",
         executable="spawner",
         arguments=[
-            "ackermann_steering_controller",
+            "mecanum_drive_controller",
             "--controller-manager", "/controller_manager",
+            "--ros-args",
+            "--remap", "reference_unstamped:=cmd_vel",
         ],
-        output="screen",
-    )
-    
-    odom_relay_node = Node(
-        package="jzt_robot",
-        executable="odom_relay_node",
-        output="screen",
         parameters=[
             {"use_sim_time": True}
         ],
-    )
-    
-    cmd_vel_relay_node = Node(
-        package="jzt_robot",
-        executable="cmd_vel_relay_node",
         output="screen",
-        parameters=[
-            {"use_sim_time": True}
-        ],
     )
 
     # ========== 5. 事件链 ==========
@@ -154,7 +160,7 @@ def generate_launch_description():
                         load_joint_state_broadcaster,
                         TimerAction(
                             period=1.0,
-                            actions=[load_ackermann_controller],
+                            actions=[load_mecanum_controller],
                         ),
                     ],
                 ),
@@ -176,7 +182,5 @@ def generate_launch_description():
     ld.add_action(spawn_after_gazebo)
     
     ld.add_action(controllers_after_spawn)
-    ld.add_action(odom_relay_node)
-    ld.add_action(cmd_vel_relay_node)
 
     return ld

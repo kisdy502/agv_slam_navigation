@@ -436,7 +436,7 @@
         </scan>
         <range>
           <min>0.15</min>
-          <max>15.0</max>
+          <max>45.0</max>
           <resolution>0.01</resolution>
         </range>
         <!-- 噪声标准差：0.005→0.001，降低点云抖动 -->
@@ -457,7 +457,7 @@
         <frame_name>laser_link</frame_name>  <!-- 🔴 改成激光自己的link -->
         <output_type>sensor_msgs/LaserScan</output_type>
         <min_range>0.15</min_range>
-        <max_range>15.0</max_range>
+        <max_range>45.0</max_range>
         <angle_min>-3.14159</angle_min>
         <angle_max>3.14159</angle_max>
         <!-- 扫描周期：0.1→0.05，匹配20Hz更新率 -->

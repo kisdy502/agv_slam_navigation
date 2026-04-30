@@ -1,0 +1,39 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 1000
+    use_sim_time: true
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    mecanum_drive_controller:
+      type: mecanum_drive_controller/MecanumDriveController
+
+mecanum_drive_controller:
+  ros__parameters:
+    reference_timeout: 0.5
+    use_stamped_vel: false
+
+    # 关键修复：参数名是 *_command_joint_name（字符串，非数组）
+    front_left_wheel_command_joint_name: "front_left_wheel_joint"
+    front_right_wheel_command_joint_name: "front_right_wheel_joint"
+    rear_right_wheel_command_joint_name: "rear_right_wheel_joint"
+    rear_left_wheel_command_joint_name: "rear_left_wheel_joint"
+
+    # 运动学参数（关键！必须设置）
+    kinematics:
+      base_frame_offset:
+        x: 0.0
+        y: 0.0
+        theta: 0.0
+      wheels_radius: 0.108
+      # sum_of_robot_center_projection_on_X_Y_axis = lx + ly
+      # lx = 前后轴距/2 = 0.40, ly = 左右轮距/2 = 0.28
+      # 所以 = 0.40 + 0.28 = 0.68
+      sum_of_robot_center_projection_on_X_Y_axis: 0.68
+
+    base_frame_id: "base_footprint"
+    odom_frame_id: "odom"
+    enable_odom_tf: true
+    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]

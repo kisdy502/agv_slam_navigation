@@ -8,10 +8,12 @@ public:
   GamepadTeleopNode() : Node("gamepad_teleop_node") {
     this->declare_parameter<int>("axis_linear", 1);
     this->declare_parameter<int>("axis_angular", 0);
-    this->declare_parameter<double>("deadzone", 0.05);
+    this->declare_parameter<double>("deadzone", 0.1);
     this->declare_parameter<int>("btn_stop", 0);       // A
     this->declare_parameter<int>("btn_speed_up", 3);   // X
     this->declare_parameter<int>("btn_speed_down", 4); // Y
+    this->declare_parameter<std::string>(
+        "cmd_topic", "/ackermann_steering_controller/reference_unstamped");
 
     this->get_parameter("axis_linear", axis_linear_);
     this->get_parameter("axis_angular", axis_angular_);
@@ -19,6 +21,8 @@ public:
     this->get_parameter("btn_stop", btn_stop_);
     this->get_parameter("btn_speed_up", btn_speed_up_);
     this->get_parameter("btn_speed_down", btn_speed_down_);
+    this->get_parameter("cmd_topic", cmd_topic_);
+
 
     RCLCPP_INFO(
         this->get_logger(),
@@ -31,7 +35,7 @@ public:
                   std::placeholders::_1));
 
     vel_pub_ =
-        this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+        this->create_publisher<geometry_msgs::msg::Twist>(cmd_topic_, 10);
   }
 
 private:
@@ -172,7 +176,7 @@ private:
 
   int axis_linear_;
   int axis_angular_;
-  double deadzone_ = 0.05;
+  double deadzone_ = 0.1;
   int btn_stop_;
   int btn_speed_up_;
   int btn_speed_down_;
@@ -183,6 +187,7 @@ private:
   rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
   int joy_no_trigger_send_zero =
       10; // 摇杆松开时候发送0速度 是否发送过了，发送过了，后面就不发了
+  std::string cmd_topic_;
 };
 
 int main(int argc, char *argv[]) {

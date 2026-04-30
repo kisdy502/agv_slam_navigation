@@ -1,0 +1,477 @@
+导航节点 + 手柄遥控 + RViz 已启动
+[INFO] [launch.user]: 在RViz中设置2D Goal启动自主导航，或使用手柄手动控制
+[INFO] [cartographer_node-1]: process started with pid [2336660]
+[cartographer_node-1] F0430 15:18:04.755954 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000) 
+[cartographer_node-1] [FATAL] [1777533484.756424053] [cartographer logger]: F0430 15:18:04.000000 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000) 
+[cartographer_node-1] *** Check failure stack trace: ***
+[cartographer_node-1]     @     0x747bf98a6b03  google::LogMessage::Fail()
+[cartographer_node-1]     @     0x747bf98ae9d1  google::LogMessage::SendToLog()
+[cartographer_node-1]     @     0x747bf98a67c2  google::LogMessage::Flush()
+[cartographer_node-1]     @     0x747bf98a878f  google::LogMessageFatal::~LogMessageFatal()
+[cartographer_node-1]     @     0x55a4e303ab89  (unknown)
+[cartographer_node-1]     @     0x55a4e2fc7a83  (unknown)
+[cartographer_node-1]     @     0x55a4e2fc74df  (unknown)
+[cartographer_node-1]     @     0x55a4e2fb70a5  (unknown)
+[cartographer_node-1]     @     0x55a4e2f466c1  (unknown)
+[cartographer_node-1]     @     0x747bf8cdc253  (unknown)
+[cartographer_node-1]     @     0x747bf8894ac3  (unknown)
+[cartographer_node-1]     @     0x747bf89268d0  (unknown)
+[INFO] [cartographer_occupancy_grid_node-2]: process started with pid [2336718]
+[ERROR] [cartographer_node-1]: process has died [pid 2336660, exit code -6, cmd '/opt/ros/humble/lib/cartographer_ros/cartographer_node -configuration_directory /home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/config -configuration_basename localization_2d.lua -load_state_filename /home/kisdy/maps/jz_map.pbstream --ros-args --log-level WARN --ros-args -r __node:=cartographer_node --params-file /tmp/launch_params_nx7id_w5 -r scan:=/scan -r odom:=/odom -r imu:=/imu'].
+
+这个错误有点诡异，这是我nav2的启动脚本报的错误，启动脚本如下
+#!/usr/bin/env python3
+"""
+Nav2 导航 + Cartographer定位 + RViz 可视化启动文件
+
+使用方法:
+    # 终端1: 先启动gazebo
+    ros2 launch jzt_robot gazebo_diff.launch.py
+
+    # 终端2: 再启动导航（默认 MPPI 控制器）
+    ros2 launch jzt_robot navigation.launch.py \
+        pbstream_file:=/home/kisdy/maps/jz_map.pbstream
+
+    # 使用 DWB 控制器
+    ros2 launch jzt_robot navigation.launch.py \
+        pbstream_file:=/home/kisdy/maps/jz_map.pbstream \
+        controller:=dwb
+"""
+
+import os
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, TimerAction, LogInfo, IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+# import logging
+
+# logging.getLogger().setLevel(logging.DEBUG)
+
+def generate_launch_description():
+    pkg_share = get_package_share_directory('jzt_robot')
+    rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
+    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_ackermann.yaml'))
+    
+    cartographer_config_dir = os.path.join(pkg_share, 'config')
+    
+    # 启动参数
+    declared_arguments = [
+        DeclareLaunchArgument(
+            'pbstream_file',
+            default_value='/home/kisdy/maps/jz_map.pbstream',
+            description='Cartographer pbstream地图文件'
+        ),
+        DeclareLaunchArgument(
+            'configuration_basename',
+            default_value='localization_2d.lua',
+            description='Cartographer Lua配置文件，导航定位用localization_2d.lua'
+        ),
+         DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
+    ]
+
+    # Cartographer 定位节点
+    cartographer_node = Node(
+        package='cartographer_ros',
+        executable='cartographer_node',
+        name='cartographer_node',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+        arguments=[
+            '-configuration_directory', cartographer_config_dir,
+            '-configuration_basename', LaunchConfiguration('configuration_basename'),
+            '-load_state_filename', LaunchConfiguration('pbstream_file'),
+            # '-start_trajectory_with_default_topics', 'false',
+            '--ros-args',
+            '--log-level', 'WARN',          # 只显示 ERROR 和 FATAL
+        ],
+        remappings=[
+            ('scan', '/scan'),
+            ('odom', '/odom'),
+            ('imu', '/imu'),  # 添加这行！
+        ],
+    )
+    
+    # 占据栅格地图发布
+    occupancy_grid_node = Node(
+        package='cartographer_ros',
+        executable='cartographer_occupancy_grid_node',
+        name='occupancy_grid_node',
+        output='screen',
+        parameters=[{
+            'use_sim_time': True,
+            'resolution': 0.05,
+            'publish_period_sec': 1.0,
+            'frame_id': 'map',  # 添加 frame_id
+        }],
+    )
+    
+    # Nav2 导航 (只用 navigation_launch.py，不需要 bringup 的 map_server/AMCL)
+    nav2_bringup_share = get_package_share_directory('nav2_bringup')
+
+    nav2_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(nav2_bringup_share, 'launch', 'navigation_launch.py')
+        ),
+        launch_arguments={
+            'params_file': LaunchConfiguration('params_file'),
+            'use_sim_time': 'true',
+            'autostart': 'true',
+        }.items(),
+    )
+    
+    # RViz 可视化
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        arguments=['-d', rviz_config],
+        parameters=[{'use_sim_time': True}],
+        output='screen',
+    )
+
+    # joy 手柄驱动
+    joy_node = Node(
+        package='joy',
+        executable='joy_node',
+        name='joy_node',
+        output='screen',
+        parameters=[{
+            'device_id': 0,
+            'autorepeat_rate': 20.0,
+            'use_sim_time': True,
+        }],
+    )
+
+    # Gamepad 遥控节点
+    gamepad_teleop_node = Node(
+        package='jzt_robot',
+        executable='gamepad_teleop_node',
+        name='gamepad_teleop_node',
+        output='screen',
+        parameters=[{
+            'cmd_topic': '/ackermann_steering_controller/reference_unstamped',
+            'use_sim_time': True,
+            # 'cmd_topic': '/cmd_vel'
+        }]
+    )
+
+    return LaunchDescription([
+        LogInfo(msg=['==========================================']),
+        LogInfo(msg=['Nav2 导航模式启动']),
+        LogInfo(msg=['地图: $(var pbstream_file)']),
+        LogInfo(msg=['==========================================']),
+
+        *declared_arguments,
+
+        TimerAction(period=0.2, actions=[cartographer_node]),
+        TimerAction(period=3.0, actions=[occupancy_grid_node]),
+        TimerAction(period=6.0, actions=[nav2_launch]),
+        TimerAction(period=9.0, actions=[joy_node]),
+        TimerAction(period=11.0, actions=[rviz_node]),
+        TimerAction(period=12.0, actions=[gamepad_teleop_node]),
+
+        LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
+        LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),
+    ])
+
+
+
+我仿真环境用差速时候，脚本没改，只是将nav2 启动脚本的配置文件换成了 nav2_params_mppi_cartographer.yaml（差速nav2配置文件）
+
+我的差速仿真脚本和阿克曼启动脚本我分别贴上来
+
+## 差速
+import os
+from launch import LaunchDescription
+from launch.actions import ExecuteProcess, DeclareLaunchArgument, RegisterEventHandler
+from launch.event_handlers import OnProcessStart
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    robot_name_in_model = "jztDiffRobot"
+    package_name = "jzt_robot"
+    world_name = "jzt_factory.world"
+    urdf_name = "jzt_diff.urdf"
+    gazebo_params_file_name="gazebo_params.yaml"
+
+    ld = LaunchDescription()
+    pkg_share = FindPackageShare(package_name).find(package_name)
+    urdf_model_path = os.path.join(pkg_share, f"urdf/{urdf_name}")
+    gazebo_world_path = os.path.join(pkg_share, f"world/{world_name}")
+    gazebo_params_path = os.path.join(pkg_share,  f"config/{gazebo_params_file_name}")
+
+
+    # 声明参数
+    declare_gui = DeclareLaunchArgument(
+        'gui',
+        default_value='true',
+        description='Launch Gazebo GUI'
+    )
+    declare_x = DeclareLaunchArgument('x', default_value='0.0', description='Robot X position')
+    declare_y = DeclareLaunchArgument('y', default_value='0.0', description='Robot Y position')
+    declare_z = DeclareLaunchArgument('z', default_value='0.0', description='Robot Z position')
+    declare_yaw = DeclareLaunchArgument('yaw', default_value='0.0', description='Robot Yaw angle')
+
+    gui = LaunchConfiguration('gui')
+    x_pos = LaunchConfiguration('x')
+    y_pos = LaunchConfiguration('y')
+    z_pos = LaunchConfiguration('z')
+    yaw_angle = LaunchConfiguration('yaw')
+
+    # ========== 关键：分开启动 gzserver 和 gzclient ==========
+    
+    # 1. 启动 gzserver（后台物理引擎，支持 ROS 参数）
+    start_gzserver = ExecuteProcess(
+        cmd=[
+            'gzserver',
+            '--verbose',
+            '-s', 'libgazebo_ros_init.so',
+            '-s', 'libgazebo_ros_factory.so',
+            gazebo_world_path,
+            '--ros-args',
+            '--params-file', gazebo_params_path,  # ✅ 使用参数文件
+        ],
+        output='screen',
+        shell=False,
+    )
+
+    # 2. 启动 gzclient（GUI前端，纯显示，不需要 ROS 参数）
+    start_gzclient = ExecuteProcess(
+        cmd=['gzclient'],
+        output='screen',
+        condition=IfCondition(gui)
+    )
+
+    # 3. 延迟启动 gzclient，等 gzserver 启动完成
+    # 或者直接用 condition，launch 会并行执行
+
+    # Spawn robot
+    spawn_entity_cmd = Node(
+        package="gazebo_ros",
+        executable="spawn_entity.py",
+        arguments=[
+            "-entity", robot_name_in_model,
+            "-file", urdf_model_path,
+            "-x", x_pos,
+            "-y", y_pos,
+            "-z", z_pos,
+            "-Y", yaw_angle,
+            "-robot_namespace", "/",  # 命名空间
+        ],
+        output="screen",
+    )
+
+    # Robot State Publisher
+    start_robot_state_publisher_cmd = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[
+            {"robot_description": open(urdf_model_path, 'r').read()},
+            {"use_sim_time": True}
+        ],
+    )
+
+    ld.add_action(declare_gui)
+    ld.add_action(declare_x)
+    ld.add_action(declare_y)
+    ld.add_action(declare_z)
+    ld.add_action(declare_yaw)
+    ld.add_action(start_gzserver)
+    ld.add_action(start_gzclient)
+    ld.add_action(spawn_entity_cmd)
+    ld.add_action(start_robot_state_publisher_cmd)
+
+    return ld
+
+## 阿克曼
+
+#!/usr/bin/env python3
+"""
+阿克曼底盘 Gazebo 仿真启动文件（gazebo_ros2_control 版本）
+"""
+
+import os
+from launch import LaunchDescription
+from launch.actions import (
+    ExecuteProcess, DeclareLaunchArgument, RegisterEventHandler,
+    TimerAction, LogInfo
+)
+from launch.event_handlers import OnProcessStart
+from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
+
+
+def generate_launch_description():
+    robot_name_in_model = "jzAckermannRobot01"
+    package_name = "jzt_robot"
+    world_name = "jzt_factory.world"
+    urdf_name = "jzt_ackermann.urdf"
+    gazebo_params_file_name = "gazebo_params.yaml"
+
+    pkg_share = FindPackageShare(package_name).find(package_name)
+    urdf_model_path = os.path.join(pkg_share, f"urdf/{urdf_name}")
+    gazebo_world_path = os.path.join(pkg_share, f"world/{world_name}")
+    gazebo_params_path = os.path.join(pkg_share, f"config/{gazebo_params_file_name}")
+
+    # 声明参数
+    declare_gui = DeclareLaunchArgument(
+        'gui', default_value='true', description='Launch Gazebo GUI'
+    )
+    declare_x = DeclareLaunchArgument('x', default_value='0.0')
+    declare_y = DeclareLaunchArgument('y', default_value='0.0')
+    declare_z = DeclareLaunchArgument('z', default_value='0.0')
+    declare_yaw = DeclareLaunchArgument('yaw', default_value='0.0')
+
+    gui = LaunchConfiguration('gui')
+    x_pos = LaunchConfiguration('x')
+    y_pos = LaunchConfiguration('y')
+    z_pos = LaunchConfiguration('z')
+    yaw_angle = LaunchConfiguration('yaw')
+
+    # ========== 1. 启动 Gazebo ==========
+    start_gzserver = ExecuteProcess(
+        cmd=[
+            'gzserver', '--verbose',
+            '-s', 'libgazebo_ros_init.so',
+            '-s', 'libgazebo_ros_factory.so',
+            gazebo_world_path,
+            '--ros-args', '--params-file', gazebo_params_path,
+        ],
+        output='screen',
+    )
+
+    start_gzclient = ExecuteProcess(
+        cmd=['gzclient'],
+        output='screen',
+        condition=IfCondition(gui)
+    )
+
+    # ========== 2. Robot State Publisher（必须在 spawn 前启动）==========
+    start_robot_state_publisher = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[
+            {"robot_description": open(urdf_model_path, 'r').read()},
+            {"use_sim_time": True}
+        ],
+    )
+
+    # ========== 3. Spawn Robot（关键修复：改用 -topic）==========
+    spawn_entity = Node(
+        package="gazebo_ros",
+        executable="spawn_entity.py",
+        arguments=[
+            "-entity", robot_name_in_model,
+            "-topic", "/robot_description",
+            "-x", x_pos,
+            "-y", y_pos,
+            "-z", z_pos,
+            "-Y", yaw_angle,
+            "-robot_namespace", "/",  # 命名空间
+        ],
+        output="screen",
+    )
+
+    # ========== 4. 控制器加载 ==========
+    load_joint_state_broadcaster = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "joint_state_broadcaster",
+            "--controller-manager", "/controller_manager",
+        ],
+        output="screen",
+    )
+
+    load_ackermann_controller = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=[
+            "ackermann_steering_controller",
+            "--controller-manager", "/controller_manager",
+        ],
+        output="screen",
+    )
+    
+    odom_relay_node = Node(
+        package="jzt_robot",
+        executable="odom_relay_node",
+        output="screen",
+        parameters=[
+            {"use_sim_time": True}
+        ],
+    )
+    
+    cmd_vel_relay_node = Node(
+        package="jzt_robot",
+        executable="cmd_vel_relay_node",
+        output="screen",
+        parameters=[
+            {"use_sim_time": True}
+        ],
+    )
+
+    # ========== 5. 事件链 ==========
+    spawn_after_gazebo = RegisterEventHandler(
+        OnProcessStart(
+            target_action=start_gzserver,
+            on_start=[
+                LogInfo(msg="✅ Gazebo server 已启动 → 3秒后开始Spawn Robot"),
+                TimerAction(
+                    period=3.0,
+                    actions=[
+                        LogInfo(msg="🚀 正在Spawn机器人..."),
+                        spawn_entity,
+                    ]
+                )
+            ]
+        )
+    )
+
+    controllers_after_spawn = RegisterEventHandler(
+        OnProcessStart(
+            target_action=spawn_entity,
+            on_start=[
+                LogInfo(msg="✅ Robot spawned → 3秒后加载控制器"),
+                TimerAction(
+                    period=3.0,
+                    actions=[
+                        load_joint_state_broadcaster,
+                        TimerAction(
+                            period=1.0,
+                            actions=[load_ackermann_controller],
+                        ),
+                    ],
+                ),
+            ]
+        )
+    )
+
+    ld = LaunchDescription()
+    ld.add_action(declare_gui)
+    ld.add_action(declare_x)
+    ld.add_action(declare_y)
+    ld.add_action(declare_z)
+    ld.add_action(declare_yaw)
+    
+    ld.add_action(start_gzserver)
+    ld.add_action(start_gzclient)
+
+    ld.add_action(start_robot_state_publisher)
+    ld.add_action(spawn_after_gazebo)
+    
+    ld.add_action(controllers_after_spawn)
+    ld.add_action(odom_relay_node)
+    # ld.add_action(cmd_vel_relay_node)
+
+    return ld
+
+    现在现象就是差速仿真环境启动nav2 ok  ，阿克曼仿真，启动nav2 失败，报开头那个错误，什么情况

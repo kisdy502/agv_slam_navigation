@@ -11,7 +11,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     robot_name_in_model = "jztDiffRobot"
     package_name = "jzt_robot"
-    world_name = "jz_house.world"
+    world_name = "jzt_factory.world"
     urdf_name = "jzt_diff.urdf"
     gazebo_params_file_name="gazebo_params.yaml"
 
