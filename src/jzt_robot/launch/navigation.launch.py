@@ -3,17 +3,30 @@
 Nav2 导航 + Cartographer定位 + RViz 可视化启动文件
 
 使用方法:
-    # 终端1: 先启动gazebo
-    ros2 launch jzt_robot gazebo_diff.launch.py
+    # 启动示例（默认参数）
+    ros2 launch jzt_robot navigation.launch.py
 
-    # 终端2: 再启动导航（默认 MPPI 控制器）
+    # 指定地图和配置
     ros2 launch jzt_robot navigation.launch.py \
         pbstream_file:=/home/kisdy/maps/jz_map.pbstream
 
-    # 使用 DWB 控制器
+    # 阿克曼底盘 (默认)
+    ros2 launch jzt_robot navigation.launch.py \
+        cmd_topic:=/ackermann_steering_controller/reference_unstamped
+
+    # 差速底盘 / 麦克纳姆底盘
+    ros2 launch jzt_robot navigation.launch.py \
+        cmd_topic:=/cmd_vel
+
+    # 真机调试
+    ros2 launch jzt_robot navigation.launch.py \
+        use_sim_time:=false
+        
+    # 完整
     ros2 launch jzt_robot navigation.launch.py \
         pbstream_file:=/home/kisdy/maps/jz_map.pbstream \
-        controller:=dwb
+        cmd_topic:=/ackermann_steering_controller/reference_unstamped \
+        use_sim_time:=true
 """
 
 import os
@@ -31,7 +44,8 @@ def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
     rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
     nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_ackermann.yaml'))
-    
+    default_nav2_param = os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer_ackermann.yaml')
+
     cartographer_config_dir = os.path.join(pkg_share, 'config')
     
     # 启动参数
@@ -46,8 +60,24 @@ def generate_launch_description():
             default_value='localization_2d.lua',
             description='Cartographer Lua配置文件，导航定位用localization_2d.lua'
         ),
-         DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
+        DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
+        # 新增：遥控器控制的速度话题
+        DeclareLaunchArgument(
+            'cmd_topic',
+            default_value='/ackermann_steering_controller/reference_unstamped',
+            description='手柄遥控器发布的速度话题 (阿克曼: /ackermann_steering_controller/reference_unstamped, 差速/麦克纳姆: /cmd_vel)'
+        ),
+
+        # 新增：是否使用仿真时间
+        DeclareLaunchArgument(
+            'use_sim_time',
+            default_value='true',
+            description='使用 /clock 话题作为时间源（仿真为 true，真机为 false）'
+        ),
     ]
+    
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    cmd_topic = LaunchConfiguration('cmd_topic')
 
     # Cartographer 定位节点
     cartographer_node = Node(
@@ -55,7 +85,7 @@ def generate_launch_description():
         executable='cartographer_node',
         name='cartographer_node',
         output='screen',
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': use_sim_time}],
         arguments=[
             '-configuration_directory', cartographer_config_dir,
             '-configuration_basename', LaunchConfiguration('configuration_basename'),
@@ -78,7 +108,7 @@ def generate_launch_description():
         name='occupancy_grid_node',
         output='screen',
         parameters=[{
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
             'resolution': 0.05,
             'publish_period_sec': 1.0,
             'frame_id': 'map',  # 添加 frame_id
@@ -94,7 +124,7 @@ def generate_launch_description():
         ),
         launch_arguments={
             'params_file': LaunchConfiguration('params_file'),
-            'use_sim_time': 'true',
+            'use_sim_time': use_sim_time,
             'autostart': 'true',
         }.items(),
     )
@@ -105,7 +135,7 @@ def generate_launch_description():
         executable='rviz2',
         name='rviz2',
         arguments=['-d', rviz_config],
-        parameters=[{'use_sim_time': True}],
+        parameters=[{'use_sim_time': use_sim_time}],
         output='screen',
     )
 
@@ -116,9 +146,9 @@ def generate_launch_description():
         name='joy_node',
         output='screen',
         parameters=[{
-            'device_id': 0,
+            'device_id': 1,
             'autorepeat_rate': 20.0,
-            'use_sim_time': True,
+            'use_sim_time': use_sim_time,
         }],
     )
 
@@ -129,9 +159,8 @@ def generate_launch_description():
         name='gamepad_teleop_node',
         output='screen',
         parameters=[{
-            'cmd_topic': '/ackermann_steering_controller/reference_unstamped',
-            'use_sim_time': True,
-            # 'cmd_topic': '/cmd_vel'
+            'cmd_topic': cmd_topic,       # 从启动参数传入
+            'use_sim_time': use_sim_time,
         }]
     )
 

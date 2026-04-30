@@ -12,8 +12,8 @@ public:
     this->declare_parameter<int>("btn_stop", 0);       // A
     this->declare_parameter<int>("btn_speed_up", 3);   // X
     this->declare_parameter<int>("btn_speed_down", 4); // Y
-    this->declare_parameter<std::string>(
-        "cmd_topic", "/ackermann_steering_controller/reference_unstamped");
+    // this->declare_parameter<std::string>(
+    //     "cmd_topic", "/ackermann_steering_controller/reference_unstamped");
 
     this->get_parameter("axis_linear", axis_linear_);
     this->get_parameter("axis_angular", axis_angular_);
@@ -21,7 +21,7 @@ public:
     this->get_parameter("btn_stop", btn_stop_);
     this->get_parameter("btn_speed_up", btn_speed_up_);
     this->get_parameter("btn_speed_down", btn_speed_down_);
-    this->get_parameter("cmd_topic", cmd_topic_);
+    // this->get_parameter("cmd_topic", cmd_topic_);
 
 
     RCLCPP_INFO(
