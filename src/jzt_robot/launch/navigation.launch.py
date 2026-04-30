@@ -77,7 +77,7 @@ def generate_launch_description():
     ]
     
     use_sim_time = LaunchConfiguration('use_sim_time')
-    cmd_topic = LaunchConfiguration('cmd_topic')
+    
 
     # Cartographer 定位节点
     cartographer_node = Node(
@@ -146,7 +146,7 @@ def generate_launch_description():
         name='joy_node',
         output='screen',
         parameters=[{
-            'device_id': 1,
+            'device_id': 0,
             'autorepeat_rate': 20.0,
             'use_sim_time': use_sim_time,
         }],
@@ -159,7 +159,7 @@ def generate_launch_description():
         name='gamepad_teleop_node',
         output='screen',
         parameters=[{
-            'cmd_topic': cmd_topic,       # 从启动参数传入
+            'cmd_topic': LaunchConfiguration('cmd_topic'),       # 从启动参数传入
             'use_sim_time': use_sim_time,
         }]
     )
@@ -177,7 +177,7 @@ def generate_launch_description():
         TimerAction(period=6.0, actions=[nav2_launch]),
         TimerAction(period=9.0, actions=[joy_node]),
         TimerAction(period=11.0, actions=[rviz_node]),
-        TimerAction(period=12.0, actions=[gamepad_teleop_node]),
+        TimerAction(period=13.0, actions=[gamepad_teleop_node]),
 
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),
