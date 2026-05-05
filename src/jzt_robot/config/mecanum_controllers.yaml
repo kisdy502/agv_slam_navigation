@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 1000
+    update_rate: 100
     use_sim_time: true
 
     joint_state_broadcaster:
@@ -15,10 +15,10 @@ mecanum_drive_controller:
     use_stamped_vel: false
 
     # 关键修复：参数名是 *_command_joint_name（字符串，非数组）
-    front_left_wheel_command_joint_name: "front_left_wheel_joint"
-    front_right_wheel_command_joint_name: "front_right_wheel_joint"
-    rear_right_wheel_command_joint_name: "rear_right_wheel_joint"
-    rear_left_wheel_command_joint_name: "rear_left_wheel_joint"
+    front_left_wheel_command_joint_name: "fl_wheel_joint"
+    front_right_wheel_command_joint_name: "fr_wheel_joint"
+    rear_right_wheel_command_joint_name: "rr_wheel_joint"
+    rear_left_wheel_command_joint_name: "rl_wheel_joint"
 
     # 运动学参数（关键！必须设置）
     kinematics:

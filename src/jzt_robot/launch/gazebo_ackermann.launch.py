@@ -36,6 +36,7 @@ def generate_launch_description():
     declare_y = DeclareLaunchArgument('y', default_value='0.0')
     declare_z = DeclareLaunchArgument('z', default_value='0.0')
     declare_yaw = DeclareLaunchArgument('yaw', default_value='0.0')
+    
 
     gui = LaunchConfiguration('gui')
     x_pos = LaunchConfiguration('x')

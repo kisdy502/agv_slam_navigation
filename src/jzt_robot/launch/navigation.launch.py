@@ -43,8 +43,7 @@ from launch_ros.actions import Node
 def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
     rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
-    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_ackermann.yaml'))
-    default_nav2_param = os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer_ackermann.yaml')
+    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_mecanum.yaml'))
 
     cartographer_config_dir = os.path.join(pkg_share, 'config')
     
@@ -176,8 +175,8 @@ def generate_launch_description():
         TimerAction(period=3.0, actions=[occupancy_grid_node]),
         TimerAction(period=6.0, actions=[nav2_launch]),
         TimerAction(period=9.0, actions=[joy_node]),
-        TimerAction(period=11.0, actions=[rviz_node]),
-        TimerAction(period=13.0, actions=[gamepad_teleop_node]),
+        TimerAction(period=11.0, actions=[gamepad_teleop_node]),
+        TimerAction(period=13.0, actions=[rviz_node]),
 
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),

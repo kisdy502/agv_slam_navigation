@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- 定义一个宏来添加每个轮子的摩擦配置 -->
+    <xacro:macro name="gazebo_wheel_friction"
+        params="prefix fdir1_x fdir1_y material_gazebo">
+        <gazebo reference="${prefix}_wheel_link">
+            <material>${material_gazebo}</material>
+
+            <collision>
+                <surface>
+                    <friction>
+                        <ode>
+                            <mu>0.8</mu>
+                            <mu2>0.6</mu2>
+                            <fdir1>
+                                <x>${fdir1_x}</x>
+                                <y>${fdir1_y}</y>
+                                <z>0.0</z>
+                            </fdir1>
+                            <kp value="10000000.0" />
+                            <kd value="1.0" />
+                        </ode>
+                    </friction>
+                    <contact>
+                        <ode>
+                            <kp>1e7</kp>
+                            <kd>1.0</kd>
+                            <min_depth>0.001</min_depth>
+                        </ode>
+                    </contact>
+                </surface>
+            </collision>
+        </gazebo>
+    </xacro:macro>
+
+    <!-- 调用，根据你的原 URDF 填写 fdir 方向 -->
+    <xacro:gazebo_wheel_friction prefix="fl" fdir1_x="-0.7071" fdir1_y="0.7071"
+        material_gazebo="Gazebo/Red" />
+    <xacro:gazebo_wheel_friction prefix="fr" fdir1_x="0.7071" fdir1_y="0.7071"
+        material_gazebo="Gazebo/Blue" />
+    <xacro:gazebo_wheel_friction prefix="rl" fdir1_x="0.7071" fdir1_y="0.7071"
+        material_gazebo="Gazebo/Purple" />
+    <xacro:gazebo_wheel_friction prefix="rr" fdir1_x="-0.7071" fdir1_y="0.7071"
+        material_gazebo="Gazebo/Yellow" />
+
+</robot>

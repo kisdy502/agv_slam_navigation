@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- <xacro:include filename="common_properties.xacro" /> -->
+
+    <!-- 定义单个轮子宏，参数化位置和标识符 -->
+    <xacro:macro name="mecanum_wheel" params="prefix x y z axis_x axis_y mesh_name yaw wheel_color">
+        <joint name="${prefix}_wheel_joint" type="continuous">
+            <parent link="base_link" />
+            <child link="${prefix}_wheel_link" />
+            <origin xyz="${x} ${y} ${z}" rpy="0 0 ${yaw}" />
+            <axis xyz="${axis_x} ${axis_y} 0" rpy="0 0 0" />
+        </joint>
+
+        <link name="${prefix}_wheel_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <!-- 使用 package:// 路径 + 参数化的 STL 文件名 -->
+                    <mesh filename="${mesh_share_dir}/${mesh_name}.STL"
+                        scale="2.0 2.0 2.0" />
+                </geometry>
+                <material name="${wheel_color}" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 ${PI_2} 0" />
+                <geometry>
+                    <cylinder length="${wheel_width}" radius="${wheel_radius}" />
+                </geometry>
+            </collision>
+            0 <inertial>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <mass value="${wheel_mass}" />
+                <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}"
+                    l="${wheel_width}" />
+            </inertial>
+        </link>
+    </xacro:macro>
+
+    <!-- 调用宏生成四个轮子，注意轴方向与你的 URDF 保持一致（都是 0 1 0） -->
+    <xacro:mecanum_wheel prefix="fl"
+        x="${wheel_x}" y="${wheel_y}" z="${wheel_z}"
+        axis_x="1" axis_y="0"
+        mesh_name="fl_wheel_link" yaw="${M_PI/2}" wheel_color="dark_grey" />
+
+    <xacro:mecanum_wheel prefix="fr"
+        x="${wheel_x}" y="${-wheel_y}" z="${wheel_z}"
+        axis_x="-1" axis_y="0"
+        mesh_name="fr_wheel_link" yaw="${-M_PI/2}" wheel_color="dark_orange" />
+
+    <xacro:mecanum_wheel prefix="rl"
+        x="${-wheel_x}" y="${wheel_y}" z="${wheel_z}"
+        axis_x="1" axis_y="0"
+        mesh_name="rl_wheel_link" yaw="${M_PI/2}" wheel_color="light_red" />
+
+    <xacro:mecanum_wheel prefix="rr"
+        x="${-wheel_x}" y="${-wheel_y}" z="${wheel_z}"
+        axis_x="-1" axis_y="0"
+        mesh_name="rr_wheel_link" yaw="${-M_PI/2}" wheel_color="grass_green" />
+
+</robot>

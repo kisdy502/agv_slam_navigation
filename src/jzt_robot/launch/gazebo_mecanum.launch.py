@@ -4,6 +4,8 @@
 """
 
 import os
+import xacro
+import tempfile
 from launch import LaunchDescription
 from launch.actions import (
     ExecuteProcess, DeclareLaunchArgument, RegisterEventHandler,
@@ -17,17 +19,27 @@ from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    robot_name_in_model = "jzAckermannRobot01"
     package_name = "jzt_robot"
-    world_name = "jz_house.world"
-    urdf_name = "jzt_mecanum.urdf"
+    
+    robot_name_in_model = "jzMecanumRobot01"
+    world_name = "jzt_work_room.world"
+    robot_xacro_name = "robot.xacro"
     gazebo_params_file_name = "gazebo_params.yaml"
 
     pkg_share = FindPackageShare(package_name).find(package_name)
-    urdf_model_path = os.path.join(pkg_share, f"urdf/{urdf_name}")
+    xacro_model_path = os.path.join(pkg_share, f"urdf/mecanum/{robot_xacro_name}")
     gazebo_world_path = os.path.join(pkg_share, f"world/{world_name}")
     gazebo_params_path = os.path.join(pkg_share, f"config/{gazebo_params_file_name}")
+    
+    
 
+
+    # 新增：是否使用仿真时间
+    declare_use_sim_time = DeclareLaunchArgument(
+        'use_sim_time',
+        default_value='true',
+        description='使用 /clock 话题作为时间源（仿真为 true，真机为 false）'
+    )
     # 声明参数
     declare_gui = DeclareLaunchArgument(
         'gui', default_value='true', description='Launch Gazebo GUI'
@@ -36,12 +48,38 @@ def generate_launch_description():
     declare_y = DeclareLaunchArgument('y', default_value='0.0')
     declare_z = DeclareLaunchArgument('z', default_value='0.0')
     declare_yaw = DeclareLaunchArgument('yaw', default_value='0.0')
-
+    declare_input_topic = DeclareLaunchArgument(
+            'input_topic',
+            default_value='/mecanum_drive_controller/odometry',
+            description='麦克纳姆发布里程计用的话题'
+        )
+    
+    declare_output_topic = DeclareLaunchArgument(
+            'output_topic',
+            default_value='/mecanum_drive_controller/reference_unstamped',
+            description='麦克纳姆速度控制用到的话题'
+        )
+    
+    use_sim_time = LaunchConfiguration('use_sim_time')
     gui = LaunchConfiguration('gui')
     x_pos = LaunchConfiguration('x')
     y_pos = LaunchConfiguration('y')
     z_pos = LaunchConfiguration('z')
     yaw_angle = LaunchConfiguration('yaw')
+    
+    
+    doc = xacro.process_file(
+        xacro_model_path,
+        mappings={'use_sim_time': 'true'}
+    )
+    robot_desc = doc.toprettyxml(indent='  ')
+    # robot_desc = robot_desc.replace('package://jzt_robot/', pkg_share + '/')
+    
+    tmp_urdf = tempfile.NamedTemporaryFile(mode='w', suffix='.urdf', delete=False)
+    tmp_urdf.write(robot_desc)
+    tmp_urdf.close()          # 关闭后 spawn 才能读取
+    urdf_file_path = tmp_urdf.name
+    
 
     # ========== 1. 启动 Gazebo ==========
     start_gzserver = ExecuteProcess(
@@ -67,8 +105,8 @@ def generate_launch_description():
         executable="robot_state_publisher",
         parameters=[
             {
-                "robot_description": open(urdf_model_path, 'r').read(),
-                'use_sim_time': True
+                "robot_description": robot_desc,
+                'use_sim_time': use_sim_time
             },
         ],
     )
@@ -79,7 +117,7 @@ def generate_launch_description():
         executable="spawn_entity.py",
         arguments=[
             "-entity", robot_name_in_model,
-            "-topic", "/robot_description",
+            "-file", urdf_file_path,
             "-x", x_pos,
             "-y", y_pos,
             "-z", z_pos,
@@ -87,7 +125,7 @@ def generate_launch_description():
             "-robot_namespace", "/",  # 命名空间
         ],
         parameters=[
-            {"use_sim_time": True}
+            {"use_sim_time": use_sim_time}
         ],
         output="screen",
     )
@@ -101,20 +139,10 @@ def generate_launch_description():
             "--controller-manager", "/controller_manager",
         ],
         parameters=[
-            {"use_sim_time": True}
+            {"use_sim_time": use_sim_time}
         ],
         output="screen",
     )
-
-    # load_ackermann_controller = Node(
-    #     package="controller_manager",
-    #     executable="spawner",
-    #     arguments=[
-    #         "ackermann_steering_controller",
-    #         "--controller-manager", "/controller_manager",
-    #     ],
-    #     output="screen",
-    # )
     
     # 替换原来的 ackermann 控制器加载
     load_mecanum_controller = Node(
@@ -127,7 +155,7 @@ def generate_launch_description():
             "--remap", "reference_unstamped:=cmd_vel",
         ],
         parameters=[
-            {"use_sim_time": True}
+            {"use_sim_time": use_sim_time}
         ],
         output="screen",
     )
@@ -167,13 +195,37 @@ def generate_launch_description():
             ]
         )
     )
+    
+    
+    odom_relay_node = Node(
+        package="jzt_robot",
+        executable="odom_relay_node",
+        output="screen",
+        parameters=[
+            {'input_topic': LaunchConfiguration('input_topic')},
+            {"use_sim_time": use_sim_time}
+        ],
+    )
+    
+    cmd_vel_relay_node = Node(
+        package="jzt_robot",
+        executable="cmd_vel_relay_node",
+        output="screen",
+        parameters=[
+            {'output_topic': LaunchConfiguration('output_topic')},
+            {"use_sim_time": use_sim_time}
+        ],
+    )
 
     ld = LaunchDescription()
+    ld.add_action(declare_use_sim_time)
     ld.add_action(declare_gui)
     ld.add_action(declare_x)
     ld.add_action(declare_y)
     ld.add_action(declare_z)
     ld.add_action(declare_yaw)
+    ld.add_action(declare_input_topic)
+    ld.add_action(declare_output_topic)
     
     ld.add_action(start_gzserver)
     ld.add_action(start_gzclient)
@@ -182,5 +234,7 @@ def generate_launch_description():
     ld.add_action(spawn_after_gazebo)
     
     ld.add_action(controllers_after_spawn)
+    # ld.add_action(odom_relay_node)
+    # ld.add_action(cmd_vel_relay_node)
 
     return ld

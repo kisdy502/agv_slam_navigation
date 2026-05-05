@@ -12,7 +12,7 @@ source install/setup.bash
 ros2 launch jzt_robot gazebo_diff.launch.py
 ```
 
-### 1. 启动 Gazebo 阿克曼仿真（始终运行）差速，阿克曼二选一
+### 1.1 启动 Gazebo 阿克曼仿真（始终运行）差速，阿克曼二选一
 
 ```bash
 conda deactivate
@@ -22,9 +22,16 @@ ros2 launch jzt_robot gazebo_ackermann.launch.py
 
 > **重要**: Gazebo 启动后保持运行，不要关闭。无论建图还是导航都基于此仿真环境。
 > **重要**: 阿克曼的底盘，移动控制话题和差速不一样，用的是
-> **重要**: ros2_control (ackermann_steering_controller)  /ackermann_steering_controller/reference_unstamped
+> **重要**: ros2_control (ackermann_steering_controller) /ackermann_steering_controller/reference_unstamped
 > **重要**: ros2 topic pub /ackermann_steering_controller/reference_unstamped geometry_msgs/msg/Twist '{linear: {x: 0.6}, angular: {z: 0.4}}' --rate 5
 
+### 1.2 启动 Gazebo 麦克纳姆轮仿真
+
+```bash
+conda deactivate
+source install/setup.bash
+ros2 launch jzt_robot gazebo_mecanum.launch.py use_sim_time:=true
+```
 
 ---
 
@@ -41,10 +48,11 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 ```
 
 **建图完成后保存地图:**
+
 ```bash
 ros2 service call /write_state \
     cartographer_ros_msgs/srv/WriteState \
-    "{filename: '/home/kisdy/maps/cartographer_map.pbstream'}"
+    "{filename: '/home/kisdy/maps/jzt_work_room_map.pbstream'}"
 ```
 
 > 建图完成后，关闭建图终端（Ctrl+C），再启动导航模式。
@@ -60,18 +68,22 @@ ros2 service call /write_state \
 conda deactivate
 source install/setup.bash
 ros2 launch jzt_robot navigation.launch.py \
-    pbstream_file:=/home/kisdy/maps/jz_map.pbstream
+    pbstream_file:=/home/kisdy/maps/jzt_work_room_map.pbstream \
+    cmd_topic:=/cmd_vel \
+    use_sim_time:=true
 ```
+
 ## /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml
+
 ---
 
 ## Launch 文件说明
 
-| 文件 | 功能 |
-|------|------|
-| `gazebo_diff.launch.py` | Gazebo 仿真环境（需始终运行） |
-| `slam.launch.py` | Cartographer 建图 + RViz 可视化 |
-| `navigation.launch.py` | Nav2 导航 + Cartographer 定位 + RViz |
+| 文件                    | 功能                                 |
+| ----------------------- | ------------------------------------ |
+| `gazebo_diff.launch.py` | Gazebo 仿真环境（需始终运行）        |
+| `slam.launch.py`        | Cartographer 建图 + RViz 可视化      |
+| `navigation.launch.py`  | Nav2 导航 + Cartographer 定位 + RViz |
 
 ## 文件结构
 
@@ -94,36 +106,37 @@ jzt_robot/
 colcon build --packages-select jzt_robot
 ```
 
-
 ## jzt_robot 问题大全 vs 解决步骤
- 1.建图时候，每次重启建图，机器人在地图位置发生偏移了，gazebo和Cartographer重复发布odom到tf坐标变化了
- 2.建图雷达不贴合地图边缘，精度不够，修改差速urdf，将分辨率提高到720，起始结束角度和插件保持一致，降低雷达的噪声
- 3.启动nav2 导航launch报错 原因，我现在用Cartographer建图，Cartographer导航，不能用bring_up.launch.py会默认启动amcl
- 需改成 navigation_launch.py
- 4.nav2启动rviz看不到机器人位置，ros2 run tf2_tools view_frames，发现没有map到odom的坐标变化，原因gazebo和Cartographer分别发布了map-odom，base_footprint-odom坐标变化，导致冲突
 
+1.建图时候，每次重启建图，机器人在地图位置发生偏移了，gazebo和Cartographer重复发布odom到tf坐标变化了2.建图雷达不贴合地图边缘，精度不够，修改差速urdf，将分辨率提高到720，起始结束角度和插件保持一致，降低雷达的噪声3.启动nav2 导航launch报错 原因，我现在用Cartographer建图，Cartographer导航，不能用bring_up.launch.py会默认启动amcl
+需改成 navigation_launch.py
+4.nav2启动rviz看不到机器人位置，ros2 run tf2_tools view_frames，发现没有map到odom的坐标变化，原因gazebo和Cartographer分别发布了map-odom，base_footprint-odom坐标变化，导致冲突
 
- ## 检查imu 的frame id是否正确,检查其他的topic用法也是一样的
+## 检查imu 的frame id是否正确,检查其他的topic用法也是一样的
+
 ```
- ros2 topic echo /imu --once | grep frame_id
+ros2 topic echo /imu --once | grep frame_id
   frame_id: imu_link
 ```
 
 ## 检查nav2 配置是否生效,例如 bt_xml_filename参数
+
 ```
 ros2 param get /bt_navigator bt_xml_filename
 ```
+
 ## 修复了问题
+
 ```
 1启动导航节点，地图不现实，日志提示odom到base_footprint坐标不存在，底盘urdf配置问题，imu的frame id需要设置成imu_link
-     localization_2d.lua参数问题，参考官方backup_2d.lua配置，补齐参数
+    localization_2d.lua参数问题，参考官方backup_2d.lua配置，补齐参数
 1导航节点启动时候，rviz中雷达轮廓和地图边缘不贴合，
   差速底盘urdf配置有问题，lidar的frame id设置成laser_scan
   localization_2d.lua参数问题，参考官方backpack_2d_localization.lua，补齐参数
 ```
 
-
 ### 阿克曼底盘，启动失败，自定义行为树配置没有生效，默认行为树的名字没有写对
+
 ```
 ros2 param get /bt_navigator bt_xml_filename
 String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml
@@ -138,12 +151,14 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 ```
 
 ### 时间戳冲突，某个节点没有被杀掉，产生多个实例，kill掉，重新启动
+
 ```
-[cartographer_node-1] F0430 15:18:04.755954 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000) 
-[cartographer_node-1] [FATAL] [1777533484.756424053] [cartographer logger]: F0430 15:18:04.000000 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000) 
+[cartographer_node-1] F0430 15:18:04.755954 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000)
+[cartographer_node-1] [FATAL] [1777533484.756424053] [cartographer logger]: F0430 15:18:04.000000 2336678 map_by_time.h:43] Check failed: data.time > std::prev(trajectory.end())->first (621355977382090000 vs. 621355977382090000)
 ```
 
 ## 阿克曼底盘到点失败 nav2 阿克曼参数需要优化，少了旋转，到点可能不容易保证角度对准
+
 ```
 [controller_server-3] [INFO] [1777536465.748209676] [controller_server]: Optimizer reset
 [controller_server-3] [INFO] [1777536465.753084792] [controller_server]: Optimizer reset
@@ -158,6 +173,18 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 [bt_navigator-7] [ERROR] [1777536466.489215556] [bt_navigator]: Goal failed
 ```
 
-
 ## 优化nav2参数，规避障碍物
+
 ## 阿克曼到点配置优化，不然一直无法到达目标点
+
+# 将 xacro文件转成 urdf文件
+
+xacro src/jzt_robot/urdf/mecanum/robot.xacro > /tmp/test.urdf
+
+## 发送移动控制命令
+
+```
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.5, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}" --rate 5
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: -0.5, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}" --rate 1
+
+```

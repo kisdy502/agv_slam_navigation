@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- 数学常量 -->
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <xacro:property name="PI_2" value="1.570796327" />
+
+    <!-- 底盘尺寸（根据你的 URDF 填入） -->
+    <xacro:property name="base_box_x" value="1.1" />
+    <xacro:property name="base_box_y" value="0.56" />
+    <xacro:property name="base_box_z" value="0.216" />
+    <xacro:property name="base_mass" value="1.5" />
+    <!-- 底盘在 base_footprint 上的偏移，你的原值是 z=0.108 -->
+    <xacro:property name="base_offset_z" value="0.108" />
+
+    <!-- 轮子参数（与你的 collision 圆柱一致） -->
+    <xacro:property name="wheel_width" value="0.08" />
+    <!-- <xacro:property name="wheel_length" value="0.108" /> -->
+    <xacro:property name="wheel_radius" value="0.108" />
+    <xacro:property name="wheel_mass" value="1.2" />
+
+    <!-- 轮子位置 -->
+    <xacro:property name="wheel_x" value="0.40" />   <!-- 前后距离 -->
+    <xacro:property name="wheel_y" value="0.28" />   <!-- 左右距离 -->
+    <!-- 如果轮子中心在底盘底部下方，填负值，你的原关节 origin z=0 -->
+    <xacro:property name="wheel_z" value="0.0" />
+
+    <!-- 颜色定义 -->
+    <material name="white">
+        <color rgba="0.95 0.95 0.95 1.0" />
+    </material>
+    <material name="purple">
+        <color rgba="0.5 0.0 0.5 1.0" />
+    </material>
+    <material name="black">
+        <color rgba="0.1 0.1 0.1 1.0" />
+    </material>
+    <material name="dark_grey">
+        <color rgba="0.3 0.3 0.3 1.0" />
+    </material>
+
+    <material name="dark_orange">
+        <color rgba="0.8 0.35 0.0 1.0" />
+    </material>
+    <material name="light_red">
+        <color rgba="1.0 0.5 0.5 1.0" />
+    </material>
+    <material name="grass_green">
+        <color rgba="0.35 0.8 0.2 1.0" />
+    </material>
+    <material name="iodine">
+        <color rgba="0.25 0.1 0.25 1.0" />
+    </material>
+
+    <!-- 惯性宏（可直接用） -->
+    <xacro:macro name="box_inertia" params="m x y z">
+        <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
+            iyy="${m*(x*x+z*z)/12}" iyz="0"
+            izz="${m*(x*x+y*y)/12}" />
+    </xacro:macro>
+
+    <xacro:macro name="cylinder_inertia" params="m r l">
+        <inertia ixx="${m*(3*r*r+l*l)/12}" ixy="0" ixz="0"
+            iyy="${m*(3*r*r+l*l)/12}" iyz="0"
+            izz="${m*r*r/2}" />
+    </xacro:macro>
+
+    <!-- STL 路径 base，方便统一管理 -->
+    <xacro:property name="mesh_package" value="jzt_robot" />
+    <xacro:property name="mesh_share_dir" value="$(find jzt_robot)/meshes" />
+
+</robot>

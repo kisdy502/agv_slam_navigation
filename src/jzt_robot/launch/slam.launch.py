@@ -104,7 +104,8 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             # 'cmd_topic': '/ackermann_steering_controller/reference_unstamped',
-            'cmd_topic': '/cmd_vel'
+            #'cmd_topic': '/cmd_vel',
+            'cmd_topic': '/mecanum_drive_controller/reference_unstamped'
         }]
     )
 

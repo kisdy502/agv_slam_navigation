@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot name="jzMecanumRobot"
+    xmlns:xacro="http://ros.org/wiki/xacro"
+    xmlns:gz="http://gazebosim.org/schema">
+
+    <!-- 切换参数：true 为仿真，false 为真机，可通过 launch 传入 -->
+    <xacro:arg name="use_sim_time" default="true" />
+
+    <!-- 载入核心结构（常量、底盘、轮子） -->
+    <xacro:include filename="common_properties.xacro" />
+    <xacro:include filename="mecanum_base.xacro" />
+    <xacro:include filename="mecanum_wheels.xacro" />
+
+    <!-- 根据 use_sim_time 选择不同的组件 -->
+    <xacro:if value="$(arg use_sim_time)">
+        <!-- 仿真：加载 Gazebo 摩擦、传感器、仿真控制器 -->
+        <xacro:include filename="gazebo_wheels.xacro" />
+        <xacro:include filename="sensors_gazebo.xacro" />
+        <xacro:include filename="ros2_control_sim.xacro" />
+
+        <!-- 关键添加：麦轮平面运动插件 -->
+        <gazebo>
+            <plugin name="mecanum_drive" filename="libgazebo_ros_planar_move.so">
+                <commandTopic>cmd_vel</commandTopic>
+                <odometryTopic>odom</odometryTopic>
+                <odometryFrame>odom</odometryFrame>
+                <odometryRate>50.0</odometryRate>
+                <robotBaseFrame>base_footprint</robotBaseFrame>
+                <publishTF>true</publishTF>
+                <publishOdomTF>true</publishOdomTF>
+                <!-- 添加轮子关节名，插件会驱动轮子转动 -->
+                <leftFrontJoint>fl_wheel_joint</leftFrontJoint>
+                <rightFrontJoint>fr_wheel_joint</rightFrontJoint>
+                <leftRearJoint>rl_wheel_joint</leftRearJoint>
+                <rightRearJoint>rr_wheel_joint</rightRearJoint>
+            </plugin>
+        </gazebo>
+
+        <!-- 原 URDF 中的全局物理设置 -->
+        <gazebo>
+            <physics type="ode">
+                <max_step_size>0.001</max_step_size>
+                <real_time_factor>1.0</real_time_factor>
+                <real_time_update_rate>1000</real_time_update_rate>
+            </physics>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:unless value="$(arg use_sim_time)">
+        <!-- 真机：只加载真实硬件控制器 -->
+        <xacro:include filename="ros2_control_real.xacro" />
+    </xacro:unless>
+
+</robot>
