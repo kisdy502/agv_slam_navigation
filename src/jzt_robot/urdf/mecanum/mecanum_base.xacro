@@ -18,7 +18,7 @@
             <geometry>
                 <box size="${base_box_x} ${base_box_y} ${base_box_z}" />
             </geometry>
-            <material name="white" />
+            <material name="light_red" />
         </visual>
         <collision>
             <origin xyz="0 0 ${base_box_z/2}" rpy="0 0 0" />

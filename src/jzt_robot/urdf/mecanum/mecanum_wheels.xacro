@@ -28,7 +28,7 @@
                     <cylinder length="${wheel_width}" radius="${wheel_radius}" />
                 </geometry>
             </collision>
-            0 <inertial>
+            <inertial>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <mass value="${wheel_mass}" />
                 <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}"

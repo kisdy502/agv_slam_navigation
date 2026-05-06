@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 100  # Hz
+    update_rate: 100 # Hz
 
     # 关节状态广播器
     joint_state_broadcaster:
@@ -19,20 +19,20 @@ ackermann_steering_controller:
   ros__parameters:
     # 参考帧
     reference_timeout: 0.1
-    front_steering: true              # 前轮转向
-    open_loop: false                  # 闭环控制（使用编码器反馈）
+    front_steering: true # 前轮转向
+    open_loop: false # 闭环控制（使用编码器反馈）
     velocity_rolling_window_size: 10
     odom_frame_id: odom
     base_frame_id: base_footprint
-    enable_odom_tf: true             # Cartographer 负责 map→odom，这里只发 odom→base_footprint
+    enable_odom_tf: false # Cartographer 负责 map→odom，这里只发 odom→base_footprint
     # publish_odom: true          # 必须为 true
 
     # 底盘几何参数
-    wheelbase: 0.80                   # 轴距
-    front_wheel_track: 0.56           # 前轮轮距
-    rear_wheel_track: 0.56            # 后轮轮距
-    front_wheels_radius: 0.12         # 前轮半径
-    rear_wheels_radius: 0.12          # 后轮半径
+    wheelbase: 0.80 # 轴距
+    front_wheel_track: 0.56 # 前轮轮距
+    rear_wheel_track: 0.56 # 后轮轮距
+    front_wheels_radius: 0.12 # 前轮半径
+    rear_wheels_radius: 0.12 # 后轮半径
 
     # 关节映射
     rear_wheels_names: [right_rear_wheel_joint, left_rear_wheel_joint]
@@ -42,40 +42,3 @@ ackermann_steering_controller:
     # 里程计发布
     pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
     twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.01]
-
-    # 速度限制
-    # linear:
-    #   x:
-    #     has_velocity_limits: true
-    #     max_velocity: 1.5              # m/s
-    #     min_velocity: -0.5             # m/s
-    #     has_acceleration_limits: true
-    #     max_acceleration: 1.0          # m/s²
-    #     min_acceleration: -1.0         # m/s²
-    #     has_jerk_limits: false
-
-    # angular:
-    #   z:
-    #     has_velocity_limits: true
-    #     max_velocity: 1.0              # rad/s
-    #     has_acceleration_limits: true
-    #     max_acceleration: 2.0          # rad/s²
-    #     has_jerk_limits: false
-
-    # 转向限制
-    # front_wheels:
-    #   left:
-    #     has_position_limits: true
-    #     min_position: -0.523598        # -30度
-    #     max_position: 0.523598         # +30度
-    #   right:
-    #     has_position_limits: true
-    #     min_position: -0.523598
-    #     max_position: 0.523598
-
-    # PID 参数（转向）
-    # steering_pid:
-    #   p: 10.0
-    #   i: 0.0
-    #   d: 0.5
-
