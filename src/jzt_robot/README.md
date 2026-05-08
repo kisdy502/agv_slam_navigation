@@ -68,6 +68,7 @@ ros2 service call /write_state \
 conda deactivate
 source install/setup.bash
 ros2 launch jzt_robot navigation.launch.py \
+    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer.yaml \
     pbstream_file:=/home/kisdy/maps/jzt_work_room_map.pbstream \
     cmd_topic:=/cmd_vel \
     use_sim_time:=true

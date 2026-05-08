@@ -9,24 +9,67 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 
 include_directories(
-    ${PROJECT_SOURCE_DIR}/include
-    ${EIGEN3_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/include
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 add_library(control
-    src/pure_pursuit.cpp
-    # src/pid.cpp
+  src/pure_pursuit.cpp
+  # src/pid.cpp
 )
 
+# ======================
+# path publisher
+# ======================
+
+add_executable(path_publisher src/path_publisher.cpp)
+
+ament_target_dependencies(
+  path_publisher
+  rclcpp
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+# ======================
+# pure pursuit node
+# ======================
+
 add_executable(pure_pursuit_node
-    src/main.cpp
+  src/pure_pursuit_node.cpp
 )
 
 target_link_libraries(pure_pursuit_node
-    control
+  control
+)
+
+ament_target_dependencies(
+  pure_pursuit_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+)
+
+# ======================
+# install targets
+# ======================
+install(TARGETS
+  control
+  path_publisher
+  pure_pursuit_node
+  DESTINATION lib/${PROJECT_NAME}
 )
 
 

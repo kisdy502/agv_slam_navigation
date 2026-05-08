@@ -33,19 +33,28 @@ options = {
 MAP_BUILDER.use_trajectory_builder_2d = true
 MAP_BUILDER.num_background_threads = 4
 
+-- 累积雷达帧数，用于提高匹配稳定性
+TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 2
 -- 激光范围：与URDF中雷达配置统一为45米
 TRAJECTORY_BUILDER_2D.min_range = 0.15
 TRAJECTORY_BUILDER_2D.max_range = 25.0
--- 体素滤波：5cm降采样，平衡精度与计算量
-TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
+-- 体素滤波：3cm降采样，平衡精度与计算量
+TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.03
 -- 缺失数据射线长度：设为雷达最大范围，避免远处误标记为障碍
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 25.0
 -- 禁用IMU：Gazebo仿真中IMU数据格式与Cartographer不匹配
 TRAJECTORY_BUILDER_2D.use_imu_data = false
 -- 启用实时回环检测，提高前端扫描匹配精度
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
--- 运动滤波：0.1°角度阈值，对小角度变化更敏感
-TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.1)
+-- 运动滤波：0.2°角度阈值，对小角度变化更敏感
+TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(0.2)
+-- 实时相关匹配
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.12
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.)
+
+-- 代价权重（更信激光）
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 0.1
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 0.1
 
 POSE_GRAPH.constraint_builder.min_score = 0.65
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7

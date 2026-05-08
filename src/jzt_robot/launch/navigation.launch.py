@@ -43,12 +43,16 @@ from launch_ros.actions import Node
 def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
     rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
-    nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_mecanum.yaml'))
+    # default_params_file = os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer_mecanum.yaml')
+    # nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_mecanum.yaml'))
 
     cartographer_config_dir = os.path.join(pkg_share, 'config')
     
     # 启动参数
     declared_arguments = [
+        # `DeclareLaunchArgument` is a function used in the Python Launch API for ROS 2 to declare
+        # launch arguments. Launch arguments are parameters that can be passed to a launch file when
+        # it is executed.
         DeclareLaunchArgument(
             'pbstream_file',
             default_value='/home/kisdy/maps/jz_map.pbstream',
@@ -59,7 +63,11 @@ def generate_launch_description():
             default_value='localization_2d.lua',
             description='Cartographer Lua配置文件，导航定位用localization_2d.lua'
         ),
-        DeclareLaunchArgument('params_file',default_value=nav2_param_path,description='Full path to param file to load'),
+        DeclareLaunchArgument(
+            'nav2_params_file',
+            default_value='/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer.yaml',
+            description='Full path to Nav2 param file to load'
+        ),
         # 新增：遥控器控制的速度话题
         DeclareLaunchArgument(
             'cmd_topic',
@@ -122,7 +130,7 @@ def generate_launch_description():
             os.path.join(nav2_bringup_share, 'launch', 'navigation_launch.py')
         ),
         launch_arguments={
-            'params_file': LaunchConfiguration('params_file'),
+            'params_file': LaunchConfiguration('nav2_params_file'),
             'use_sim_time': use_sim_time,
             'autostart': 'true',
         }.items(),

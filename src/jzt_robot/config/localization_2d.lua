@@ -39,30 +39,38 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
 }
 
 -- 激光雷达配置
-TRAJECTORY_BUILDER_2D = {
-  use_online_correlative_scan_matching = true, -- 是否启用相关匹配
-  use_imu_data = true,  -- 🔴 在2D builder中也明确启用
-  imu_gravity_time_constant = 10.,  
-  num_accumulated_range_data = 10,  -- 累积10帧雷达数据进行匹配
-  ceres_scan_matcher = {
-    occupied_space_weight = 1.0,    -- 占据空间残差权重
-    translation_weight = 10.0,      -- 平移正则权重
-    rotation_weight = 40.0,         -- 旋转正则权重
-    ceres_solver_options = {
-      use_nonmonotonic_steps = false,
-      max_num_iterations = 20,      -- 最大迭代次数
-      num_threads = 1,              -- 求解线程数
-    }
-  },
-  real_time_correlative_scan_matcher = {
-    linear_search_window = 0.1,     -- 线性搜索窗(m)
-    angular_search_window = math.rad(1.), -- 角度搜索窗(rad)
-    translation_delta_cost_weight = 1e-1, -- 平移代价权重
-    rotation_delta_cost_weight = 1e-1,    -- 旋转代价权重
-  }
-}
+-- 启用在线相关匹配（Real Time Correlative Scan Matcher）
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 
--- 冻结已有轨迹，不再进行全局优化
+-- 在 2D builder 中明确启用 IMU
+TRAJECTORY_BUILDER_2D.use_imu_data = true
+
+-- IMU 重力时间常数（用于姿态积分）
+TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 10.
+
+-- 累积雷达帧数，用于提高匹配稳定性
+TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 5
+
+-- Ceres 扫描匹配器配置
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 1.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 10.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 40.0
+
+-- Ceres 求解器选项
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = false
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 20
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.ceres_solver_options.num_threads = 1
+
+-- 实时相关匹配器配置
+-- 体素滤波：3cm降采样，平衡精度与计算量
+TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 0.33
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 0.3
+
+-- 降低全局优化频率（每20个节点优化一次），
+-- 用于纯定位模式以减少计算量
 POSE_GRAPH.optimize_every_n_nodes = 20
 -- POSE图优化配置
 POSE_GRAPH.constraint_builder.min_score = 0.6
