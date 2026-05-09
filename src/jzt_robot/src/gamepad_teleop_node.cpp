@@ -203,11 +203,8 @@ private:
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg) {
     const bool has_input = hasAnyInput(msg);
     auto twist = geometry_msgs::msg::Twist();
-    // RCLCPP_INFO(this->get_logger(), "has_input=%s, axes[0]=%.2f,
-    // axes[1]=%.2f",
-    //             has_input ? "true" : "false",
-    //             msg->axes.size() > 0 ? msg->axes[0] : 0.0,
-    //             msg->axes.size() > 1 ? msg->axes[1] : 0.0);
+    RCLCPP_INFO(this->get_logger(), "has_input=%s",
+                has_input ? "true" : "false");
     if (!has_input) {
       if (joy_no_trigger_send_zero < 6) {
         joy_no_trigger_send_zero++;

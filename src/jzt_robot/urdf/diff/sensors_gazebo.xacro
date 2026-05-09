@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-    <!-- 前向雷达 -->
+    <!-- ==================== 前向雷达 Gazebo 插件 ==================== -->
     <gazebo reference="laser_front_link">
         <material>Gazebo/Red</material>
         <sensor name="laser_front_sensor" type="ray">
@@ -14,6 +14,7 @@
                     <horizontal>
                         <samples>540</samples>
                         <resolution>1.0</resolution>
+                        <time_increment>0.0000926</time_increment>
                         <min_angle>-2.35619</min_angle>
                         <max_angle>2.35619</max_angle>
                     </horizontal>
@@ -23,26 +24,31 @@
                     <max>45.0</max>
                     <resolution>0.01</resolution>
                 </range>
+                <!-- 激光雷达噪声：中等真实水准，2cm标准差 -->
                 <noise>
                     <type>gaussian</type>
                     <mean>0.0</mean>
                     <stddev>0.02</stddev>
                 </noise>
             </ray>
-            <!-- ✅ 改用专用激光插件 -->
-            <plugin name="gazebo_ros_laser_front" filename="libgazebo_ros_laser.so">
+            <plugin name="gazebo_ros_laser_front" filename="libgazebo_ros_ray_sensor.so">
                 <ros>
                     <namespace>/</namespace>
                     <remapping>~/out:=scan_front</remapping>
                 </ros>
                 <topicName>scan_front</topicName>
-                <frameName>laser_front_link</frameName>
-                <updateRate>20</updateRate>
+                <frame_name>laser_front_link</frame_name>
+                <output_type>sensor_msgs/LaserScan</output_type>
+                <min_range>0.15</min_range>
+                <max_range>45.0</max_range>
+                <angle_min>-2.35619</angle_min>
+                <angle_max>2.35619</angle_max>
+                <scan_time>0.05</scan_time>
             </plugin>
         </sensor>
     </gazebo>
 
-    <!-- 后向雷达 -->
+    <!-- ==================== 后向雷达 Gazebo 插件 ==================== -->
     <gazebo reference="laser_rear_link">
         <material>Gazebo/Red</material>
         <sensor name="laser_rear_sensor" type="ray">
@@ -55,6 +61,7 @@
                     <horizontal>
                         <samples>540</samples>
                         <resolution>1.0</resolution>
+                        <time_increment>0.0000926</time_increment>
                         <min_angle>-2.35619</min_angle>
                         <max_angle>2.35619</max_angle>
                     </horizontal>
@@ -64,21 +71,26 @@
                     <max>45.0</max>
                     <resolution>0.01</resolution>
                 </range>
+                <!-- 激光雷达噪声：中等真实水准，2cm标准差 -->
                 <noise>
                     <type>gaussian</type>
                     <mean>0.0</mean>
                     <stddev>0.02</stddev>
                 </noise>
             </ray>
-            <!-- ✅ 改用专用激光插件 -->
-            <plugin name="gazebo_ros_laser_rear" filename="libgazebo_ros_laser.so">
+            <plugin name="gazebo_ros_laser_rear" filename="libgazebo_ros_ray_sensor.so">
                 <ros>
                     <namespace>/</namespace>
                     <remapping>~/out:=scan_rear</remapping>
                 </ros>
                 <topicName>scan_rear</topicName>
-                <frameName>laser_rear_link</frameName>
-                <updateRate>20</updateRate>
+                <frame_name>laser_rear_link</frame_name>
+                <output_type>sensor_msgs/LaserScan</output_type>
+                <min_range>0.15</min_range>
+                <max_range>45.0</max_range>
+                <angle_min>-2.35619</angle_min>
+                <angle_max>2.35619</angle_max>
+                <scan_time>0.05</scan_time>
             </plugin>
         </sensor>
     </gazebo>
