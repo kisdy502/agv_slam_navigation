@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- Gazebo 差速驱动插件 -->
+    <gazebo>
+        <plugin name='diff_drive' filename='libgazebo_ros_diff_drive.so'>
+            <ros>
+                <namespace>/</namespace>
+                <remapping>cmd_vel:=cmd_vel</remapping>
+                <remapping>odom:=odom</remapping>
+            </ros>
+            <update_rate>100</update_rate>
+            <!-- wheels -->
+            <left_joint>left_wheel_joint</left_joint>
+            <right_joint>right_wheel_joint</right_joint>
+            <!-- kinematics -->
+            <wheel_separation>0.36</wheel_separation>
+            <wheel_diameter>0.065</wheel_diameter>
+            <!-- limits -->
+            <max_wheel_torque>20</max_wheel_torque>
+            <!-- max_wheel_acceleration: 轮子角加速度上限 (rad/s²)
+                 线加速度 = 角加速度 × 轮子半径(0.0325m)
+                 改为15.0 → 线加速度约0.49m/s²，兼顾安全与性能
+                 如需更高速度可增大此值，真机请根据实际电机扭矩和地面摩擦调整 -->
+            <max_wheel_acceleration>15.0</max_wheel_acceleration>
+            <!-- output -->
+            <publish_odom>true</publish_odom>
+            <!-- 禁用Gazebo发布odom TF，由Cartographer统一负责map→odom→base_footprint -->
+            <publish_odom_tf>false</publish_odom_tf>
+            <publish_wheel_tf>true</publish_wheel_tf>
+            <odometry_frame>odom</odometry_frame>
+            <robot_base_frame>base_footprint</robot_base_frame>
+        </plugin>
+    </gazebo>
+
+    <gazebo>
+        <physics type="ode">
+            <max_step_size>0.001</max_step_size>
+            <real_time_factor>1.0</real_time_factor>
+            <real_time_update_rate>1000</real_time_update_rate>
+        </physics>
+    </gazebo>
+
+</robot>

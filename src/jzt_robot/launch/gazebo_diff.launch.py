@@ -1,6 +1,6 @@
 import os
 from launch import LaunchDescription
-from launch.actions import ExecuteProcess, DeclareLaunchArgument
+from launch.actions import ExecuteProcess, DeclareLaunchArgument, TimerAction
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, Command
 from launch.conditions import IfCondition
 from launch_ros.actions import Node
@@ -23,8 +23,8 @@ def generate_launch_description():
     )
     declare_urdf_name = DeclareLaunchArgument(
         'urdf_name',
-        default_value='jzt_diff.urdf',
-        description='URDF file name'
+        default_value='diff/robot.xacro',
+        description='Robot XACRO file path (relative to urdf/)'
     )
     declare_gazebo_params_file = DeclareLaunchArgument(
         'gazebo_params_file',
@@ -82,31 +82,40 @@ def generate_launch_description():
         condition=IfCondition(gui)
     )
 
-    # 3. 生成机器人
-    spawn_entity_cmd = Node(
-        package="gazebo_ros",
-        executable="spawn_entity.py",
-        arguments=[
-            "-entity", robot_name_in_model,
-            "-file", urdf_model_path,
-            "-x", x_pos,
-            "-y", y_pos,
-            "-z", z_pos,
-            "-Y", yaw_angle,
-            "-robot_namespace", "/",
-        ],
-        output="screen",
+    # XACRO 解析为 URDF
+    robot_description = ParameterValue(
+        Command(['xacro ', urdf_model_path, ' use_sim_time:=true']),
+        value_type=str
     )
 
-    # 4. Robot State Publisher（动态读取 URDF）
+    # 3. Robot State Publisher（发布 /robot_description）
     start_robot_state_publisher_cmd = Node(
-    package="robot_state_publisher",
-    executable="robot_state_publisher",
-    parameters=[
-        {"robot_description": ParameterValue(Command(['cat ', urdf_model_path]), value_type=str)},
-        {"use_sim_time": True}
-    ],
-)
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[
+            {"robot_description": robot_description},
+            {"use_sim_time": True}
+        ],
+    )
+
+    # 4. 生成机器人（从 /robot_description topic 读取，加 2 秒延迟确保 publisher 已就绪）
+    spawn_entity_cmd = TimerAction(
+        period=2.0,
+        actions=[Node(
+            package="gazebo_ros",
+            executable="spawn_entity.py",
+            arguments=[
+                "-entity", robot_name_in_model,
+                "-topic", "robot_description",
+                "-x", x_pos,
+                "-y", y_pos,
+                "-z", z_pos,
+                "-Y", yaw_angle,
+                "-robot_namespace", "/",
+            ],
+            output="screen",
+        )]
+    )
 
 
     ld = LaunchDescription()
@@ -120,10 +129,10 @@ def generate_launch_description():
     ld.add_action(declare_y)
     ld.add_action(declare_z)
     ld.add_action(declare_yaw)
-    # 添加动作
+    # 添加动作（robot_state_publisher 必须在 spawn_entity 之前启动）
     ld.add_action(start_gzserver)
     ld.add_action(start_gzclient)
-    ld.add_action(spawn_entity_cmd)
     ld.add_action(start_robot_state_publisher_cmd)
+    ld.add_action(spawn_entity_cmd)
 
     return ld

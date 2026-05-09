@@ -68,7 +68,7 @@ ros2 service call /write_state \
 conda deactivate
 source install/setup.bash
 ros2 launch jzt_robot navigation.launch.py \
-    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer.yaml \
+    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer_double_lidar.yaml \
     pbstream_file:=/home/kisdy/maps/jzt_work_room_map.pbstream \
     cmd_topic:=/cmd_vel \
     use_sim_time:=true
@@ -189,3 +189,55 @@ ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: 0.5, z: 0.
 ros2 topic pub /cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.0, y: -0.5, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}" --rate 1
 
 ```
+
+## 查看消息结构
+
+```
+ros2 interface show nav_msgs/msg/Odometry
+ros2 interface package nav_msgs
+ros2 interface show geometry_msgs/msg/PoseWithCovariance
+```
+
+## 查看topic
+
+```
+# 查看所有 topic
+ros2 topic list
+
+# 查看 topic 类型
+ros2 topic type /scan
+
+# 查看 topic 结构
+ros2 interface show sensor_msgs/msg/LaserScan
+
+# 实时打印 topic 数据
+ros2 topic echo /scan
+
+# 查看 topic 发布频率
+ros2 topic hz /scan
+
+# 查看 topic 带宽
+ros2 topic bw /scan
+```
+
+# 查看节点参数
+
+ros2 param list /cartographer_node
+
+# 获取参数值
+
+ros2 param get /cartographer_node map_frame
+
+# 设置参数
+
+ros2 param set /cartographer_node use_sim_time true
+
+# 查看所有 service
+
+ros2 service list
+
+# 查看 service 类型
+
+ros2 service type /service_name
+
+# 手动调用 service
