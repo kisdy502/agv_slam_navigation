@@ -17,7 +17,7 @@ behavior_server:
       plugin: "nav2_behaviors/Wait"
     global_frame: map
     robot_base_frame: base_link
-    transform_tolerance: 1.5 # 对应原AMCL的transform_tolerance
+    transform_tolerance: 1.5
     use_sim_time: True
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.5
@@ -33,8 +33,8 @@ planner_server:
     GridBased:
       plugin: "nav2_navfn_planner/NavfnPlanner"
       tolerance: 0.5
-      use_astar: True #全局路径规划，使用a*算法
-      allow_unknown: false #allow_unknown 改为 false，这样规划器只会使用已知地图，路径更稳定，不会无谓重规划
+      use_astar: True
+      allow_unknown: false
 
 planner_server_rclcpp_node:
   ros__parameters:
@@ -50,11 +50,10 @@ smoother_server:
       tolerance: 1.0e-10
       max_its: 800
       do_refinement: True
-      #控制平滑强度
-      w_data: 0.2 # 数据保真权重（越小越平滑，越不贴原路径）
-      w_smooth: 0.3 # 平滑权重（越大曲线越顺滑）
+      w_data: 0.2
+      w_smooth: 0.3
 
-# 控制器服务器 - MPPI (保持原有配置)
+# 控制器服务器 - MPPI
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
@@ -63,13 +62,13 @@ controller_server:
     min_theta_velocity_threshold: 0.001
     failure_tolerance: 0.3
     progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+    goal_checker_plugins: ["general_goal_checker"]
     controller_plugins: ["FollowPath"]
     speed_limit_topic: "speed_limit"
 
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5 # 这两个参数：10 秒内移动距离小于 0.5m
+      required_movement_radius: 0.5
       movement_time_allowance: 10.0
 
     general_goal_checker:
@@ -80,7 +79,7 @@ controller_server:
 
     FollowPath:
       plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 36 #预测更远
+      time_steps: 36
       model_dt: 0.05
       batch_size: 2000
       vx_std: 0.3
@@ -88,13 +87,13 @@ controller_server:
       wz_std: 0.4
       vx_max: 1.5
       vx_min: -0.35
-      vy_max: 0.01 # 差速，不需要横向移动，平移
-      wz_max: 1.2 # 角速度
-      ax_max: 2.0 # 必须显式设置！从0加速到1.5只需0.75s
+      vy_max: 0.01
+      wz_max: 1.2
+      ax_max: 2.0
       ax_min: -2.0
       iteration_count: 1
       prune_distance: 3.0
-      transform_tolerance: 0.3 #变换容差，仿真调大点
+      transform_tolerance: 0.3
       temperature: 0.5
       gamma: 0.02
       motion_model: "DiffDrive"
@@ -102,8 +101,7 @@ controller_server:
       TrajectoryVisualizer:
         trajectory_step: 5
         time_step: 3
-      # AckermannConstraints:  #差速底盘，这个没用
-      #   min_turning_r: 0.2
+      
       critics:
         [
           "ConstraintCritic",
@@ -114,27 +112,34 @@ controller_server:
           "PathFollowCritic",
           "PathAngleCritic",
           "PreferForwardCritic",
+          "ObstacleCritic",        # ✅ 修正：去掉 s，且加入列表
         ]
+      
       ConstraintCritic:
         enabled: True
         cost_power: 1
         cost_weight: 4.0
+      
       GoalCritic:
         enabled: True
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 1.4
+      
       GoalAngleCritic:
         enabled: True
         cost_power: 1
         cost_weight: 3.0
         threshold_to_consider: 0.5
-      PreferForwardCritic: #负责加速
+      
+      PreferForwardCritic:
         enabled: True
         cost_power: 1
         cost_weight: 5.0
         threshold_to_consider: 0.5
-      ObstaclesCritic: #负责避障
+      
+      # ✅ 修正：ObstacleCritic（无 s）
+      ObstacleCritic:
         enabled: True
         cost_power: 1
         repulsion_weight: 7.5
@@ -143,6 +148,7 @@ controller_server:
         collision_cost: 10000.0
         collision_margin_distance: 0.1
         near_goal_distance: 0.5
+      
       CostCritic:
         enabled: True
         cost_power: 1
@@ -151,6 +157,7 @@ controller_server:
         consider_footprint: True
         collision_cost: 1000000.0
         near_goal_distance: 1.0
+      
       PathAlignCritic:
         enabled: True
         cost_power: 1
@@ -160,12 +167,14 @@ controller_server:
         threshold_to_consider: 0.5
         offset_from_furthest: 20
         use_path_orientations: false
+      
       PathFollowCritic:
         enabled: True
         cost_power: 1
         cost_weight: 5.0
         offset_from_furthest: 5
         threshold_to_consider: 1.4
+      
       PathAngleCritic:
         enabled: True
         cost_power: 1
@@ -174,21 +183,12 @@ controller_server:
         threshold_to_consider: 0.5
         max_angle_to_furthest: 1.0
         forward_preference: true
-      # VelocityDeadbandCritic:
-      #   enabled: True
-      #   cost_power: 1
-      #   cost_weight: 35.0
-      #   deadband_velocities: [0.05, 0.05, 0.05]
-      # TwirlingCritic:
-      #   enabled: true
-      #   twirling_cost_power: 1
-      #   twirling_cost_weight: 10.0
 
 controller_server_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
-## 本地代价地图 (保持原有配置)
+## 本地代价地图
 local_costmap:
   local_costmap:
     ros__parameters:
@@ -203,14 +203,17 @@ local_costmap:
       resolution: 0.05
       footprint: "[[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]]"
       inflation_radius: 0.6
-      plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      plugins: ["obstacle_layer", "inflation_layer"]
+      
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 5.0
         inflation_radius: 0.6
+      
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        # ✅ 修正：话题名改为双雷达
         observation_sources: scan_front scan_rear
         scan_front:
           topic: /scan_front
@@ -222,8 +225,8 @@ local_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 7.5
           obstacle_min_range: 0.0
-        scan_rear:
-          topic: /scan_rear
+        scan_rear_left:
+          topic: /scan_rear_left
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -232,10 +235,13 @@ local_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 7.5
           obstacle_min_range: 0.0
+      
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+      
       always_send_full_costmap: True
+  
   local_costmap_client:
     ros__parameters:
       use_sim_time: True
@@ -243,7 +249,7 @@ local_costmap:
     ros__parameters:
       use_sim_time: True
 
-## 全局代价地图 (保持原有配置)
+## 全局代价地图
 global_costmap:
   global_costmap:
     ros__parameters:
@@ -256,9 +262,11 @@ global_costmap:
       resolution: 0.05
       track_unknown_space: True
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
+      
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        # ✅ 修正：话题名改为双雷达
         observation_sources: scan_front scan_rear
         scan_front:
           topic: /scan_front
@@ -270,8 +278,8 @@ global_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 7.5
           obstacle_min_range: 0.0
-        scan_rear:
-          topic: /scan_rear
+        scan_rear_left:
+          topic: /scan_rear_left
           max_obstacle_height: 2.0
           clearing: True
           marking: True
@@ -280,13 +288,16 @@ global_costmap:
           raytrace_min_range: 0.0
           obstacle_max_range: 7.5
           obstacle_min_range: 0.0
+      
       static_layer:
         plugin: "nav2_costmap_2d::StaticLayer"
         map_subscribe_transient_local: True
+      
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
         cost_scaling_factor: 3.0
         inflation_radius: 0.6
+      
       always_send_full_costmap: True
 
   global_costmap_client:
@@ -295,7 +306,8 @@ global_costmap:
   global_costmap_rclcpp_node:
     ros__parameters:
       use_sim_time: True
-## 路点跟踪器 (保持原有配置)
+
+## 路点跟踪器
 waypoint_follower:
   ros__parameters:
     loop_rate: 20
@@ -306,7 +318,7 @@ waypoint_follower:
       enabled: True
       waypoint_pause_duration: 200
 
-# 🔧 其他节点 (保持原有配置)
+# 其他节点
 robot_state_publisher:
   ros__parameters:
     use_sim_time: True
@@ -317,8 +329,8 @@ bt_navigator:
     global_frame: map
     robot_base_frame: base_link
     odom_topic: odom
-    bt_loop_duration: 100 # 从10改为100，单位是毫秒，即10Hz
-    default_server_timeout: 5000 # 从20改为5000，单位毫秒，即5秒
+    bt_loop_duration: 100
+    default_server_timeout: 5000
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -368,16 +380,15 @@ bt_navigator_rclcpp_node:
   ros__parameters:
     use_sim_time: True
 
-## 最大速度一直是0.5米、秒，原来是没加velocity_smoother配置，导致用的默认配置，最大速度就是0.5
 velocity_smoother:
   ros__parameters:
     smoothing_frequency: 20.0
     scale_velocities: False
     feedback: "OPEN_LOOP"
-    max_velocity: [1.5, 0.0, 1.2] # [vx_max, vy_max, wz_max]
-    min_velocity: [-0.35, 0.0, -1.2] # [vx_min, vy_min, wz_min]
-    max_accel: [2.5, 0.0, 3.2] # [ax_max, ay_max, aw_max]
-    min_accel: [-2.5, 0.0, -3.2] # [ax_min, ay_min, aw_min]
+    max_velocity: [1.5, 0.0, 1.2]
+    min_velocity: [-0.35, 0.0, -1.2]
+    max_accel: [2.5, 0.0, 3.2]
+    min_accel: [-2.5, 0.0, -3.2]
     odom_topic: "/odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

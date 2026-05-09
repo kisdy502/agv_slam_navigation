@@ -102,7 +102,8 @@ def generate_launch_description():
             '--log-level', 'WARN',          # 只显示 ERROR 和 FATAL
         ],
         remappings=[
-            ('scan', '/scan'),
+            ('scan_1', '/scan_front'),      # 第一个雷达：/scan_1 → /scan_front
+            ('scan_2', '/scan_rear'),     # 第二个雷达：/scan_2 → /scan_rear
             ('odom', '/odom'),
             ('imu', '/imu'),  # 添加这行！
         ],

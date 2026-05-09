@@ -174,6 +174,47 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 [bt_navigator-7] [ERROR] [1777536466.489215556] [bt_navigator]: Goal failed
 ```
 
+
+# 双雷达仿真遇到的坑
+
+```
+[cartographer_node-1] [WARN] [1778319965.766929041] [cartographer logger]: W0509 17:46:05.000000 348905 ordered_multi_queue.cc:155] Queue waiting for data: (1, scan_2)
+
+
+
+        
+  # Cartographer 定位节点
+    cartographer_node = Node(
+        package='cartographer_ros',
+        executable='cartographer_node',
+        name='cartographer_node',
+        output='screen',
+        parameters=[{'use_sim_time': use_sim_time}],
+        arguments=[
+            '-configuration_directory', cartographer_config_dir,
+            '-configuration_basename', LaunchConfiguration('configuration_basename'),
+            '-load_state_filename', LaunchConfiguration('pbstream_file'),
+            # '-start_trajectory_with_default_topics', 'false',
+            '--ros-args',
+            '--log-level', 'WARN',          # 只显示 ERROR 和 FATAL
+        ],
+        remappings=[
+            ('scan_1', '/scan_front'),      # 第一个雷达：/scan → /scan_front
+            ('scan_2', '/scan_rear'),     # 第二个雷达：/scan_1 → /scan_rear
+            ('odom', '/odom'),
+            ('imu', '/imu'),  # 添加这行！
+        ],
+    )
+
+    原因定位节点 需要将两个雷达的话题转发过去，但是我写成了,导致cartographer迟迟收不到第二个激光雷达，无法完成定位初始化，导致map-odom的坐标变化无法发布
+    remappings=[
+            ('scan', '/scan_front'),      # 第一个雷达：/scan → /scan_front
+            ('scan_1', '/scan_rear'),     # 第二个雷达：/scan_1 → /scan_rear
+            ('odom', '/odom'),
+            ('imu', '/imu'),  # 添加这行！
+        ],
+```
+
 ## 优化nav2参数，规避障碍物
 
 ## 阿克曼到点配置优化，不然一直无法到达目标点
@@ -241,3 +282,7 @@ ros2 service list
 ros2 service type /service_name
 
 # 手动调用 service
+
+
+
+
