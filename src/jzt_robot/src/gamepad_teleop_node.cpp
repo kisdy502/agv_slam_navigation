@@ -16,6 +16,9 @@ public:
     this->declare_parameter<int>("btn_speed_up", 3);
     this->declare_parameter<int>("btn_speed_down", 4);
     this->declare_parameter<std::string>("cmd_topic", cmd_topic_);
+    // Add: 看门狗参数
+    this->declare_parameter<double>("watchdog_timeout", 0.2); // 超时秒数
+    this->declare_parameter<double>("min_publish_cmd", 0.05); // 最小发布阈值
 
     this->get_parameter("axis_linear", axis_linear_);
     this->get_parameter("axis_angular", axis_angular_);
@@ -24,7 +27,7 @@ public:
     this->get_parameter("cross_suppress_ratio", cross_suppress_ratio_);
     this->get_parameter("btn_stop", btn_stop_);
     this->get_parameter("btn_speed_up", btn_speed_up_);
-       this->get_parameter("btn_speed_down", btn_speed_down_);
+    this->get_parameter("btn_speed_down", btn_speed_down_);
     this->get_parameter("cmd_topic", cmd_topic_);
 
     RCLCPP_INFO(this->get_logger(),
@@ -39,6 +42,14 @@ public:
 
     vel_pub_ =
         this->create_publisher<geometry_msgs::msg::Twist>(cmd_topic_, 10);
+
+    // Add: 启动看门狗定时器，10Hz 检查
+    watchdog_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(100),
+        std::bind(&GamepadTeleopNode::watchdogCallback, this));
+
+    // Add: 初始化时间戳（避免初期判断误差）
+    last_nonzero_cmd_time_ = this->now();
   }
 
 private:
@@ -147,24 +158,27 @@ private:
     }
   }
 
-  bool hasAnyInput(const sensor_msgs::msg::Joy::SharedPtr &msg) const {
-    for (size_t i = 0; i < msg->axes.size(); i++) {
-      auto axesValue = msg->axes[i];
-      if (i == 4 || i == 5) { // LT RT
-        // 我手上有两个北通遥控器，居然一个1.0一个-1.0，真是醉了，先兼容一下，这两个按键忽略
-        if (axesValue < 1.0 - deadzone_)
-          return true;
-      } else {
-        if (std::abs(axesValue) > deadzone_)
-          return true;
-      }
-    }
-    for (const auto &btn : msg->buttons) {
-      if (btn != 0)
-        return true;
-    }
-    return false;
-  }
+  // bool hasAnyInput(const sensor_msgs::msg::Joy::SharedPtr &msg) const {
+  //   for (size_t i = 0; i < msg->axes.size(); i++) {
+  //     auto axesValue = msg->axes[i];
+  //     if (i == 4 ||
+  //         i ==
+  //             5) { // LT RT
+  //                  //
+  //                  我手上有两个北通遥控器，居然一个1.0一个-1.0，真是醉了，先兼容一下，这两个按键忽略
+  //                  // if (axesValue < 1.0 - deadzone_)
+  //                  //   return true;
+  //     } else {
+  //       if (std::abs(axesValue) > deadzone_)
+  //         return true;
+  //     }
+  //   }
+  //   for (const auto &btn : msg->buttons) {
+  //     if (btn != 0)
+  //       return true;
+  //   }
+  //   return false;
+  // }
 
   double applyDeadzone(double value) {
     if (std::abs(value) < deadzone_)
@@ -201,23 +215,23 @@ private:
    * 如果是阿克曼就机器人，只有角速度，没有线速度，是无法移动的，这是由其运动模型决定的
    */
   void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-    const bool has_input = hasAnyInput(msg);
-    auto twist = geometry_msgs::msg::Twist();
-    RCLCPP_INFO(this->get_logger(), "has_input=%s",
-                has_input ? "true" : "false");
-    if (!has_input) {
-      if (joy_no_trigger_send_zero < 6) {
-        joy_no_trigger_send_zero++;
-        publishVelocity(twist);
-      }
-      return;
-    }
-    joy_no_trigger_send_zero = 0;
+    // const bool has_input = hasAnyInput(msg);
+    // auto twist = geometry_msgs::msg::Twist();
+    // // RCLCPP_INFO(this->get_logger(), "has_input=%s",
+    // //             has_input ? "true" : "false");
+    // if (!has_input) {
+    //   if (joy_no_trigger_send_zero < 6) {
+    //     joy_no_trigger_send_zero++;
+    //     publishVelocity(twist);
+    //   }
+    //   return;
+    // }
+    // joy_no_trigger_send_zero = 0;
 
     // 紧急停止
     if (btn_stop_ >= 0 && btn_stop_ < static_cast<int>(msg->buttons.size())) {
       if (msg->buttons[btn_stop_] == 1) {
-        publishVelocity(twist);
+        publishStop(); // 直接发停止，并更新时间
         return;
       }
     }
@@ -249,9 +263,37 @@ private:
     filtered_linear = applyDeadzone(filtered_linear);
     filtered_angular = applyDeadzone(filtered_angular);
 
-    twist.linear.x = filtered_linear * getLinearScale();
-    twist.angular.z = filtered_angular * getAngularScale();
-    publishVelocity(twist);
+    // 速度缩放
+    double linear_cmd = filtered_linear * getLinearScale();
+    double angular_cmd = filtered_angular * getAngularScale();
+
+    // ✅ 最小发布阈值：低于阈值的指令直接置零
+    if (std::abs(linear_cmd) < min_publish_cmd_)
+      linear_cmd = 0.0;
+    if (std::abs(angular_cmd) < min_publish_cmd_)
+      angular_cmd = 0.0;
+
+    geometry_msgs::msg::Twist twist;
+    twist.linear.x = linear_cmd;
+    twist.angular.z = angular_cmd;
+
+    bool has_cmd =
+        (std::abs(linear_cmd) > 1e-6 || std::abs(angular_cmd) > 1e-6);
+
+    if (has_cmd) {
+      publishVelocity(twist);
+      last_nonzero_cmd_time_ = this->now(); // 更新最后有效指令时间
+      stopped_ = false;
+      RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000,
+                           "Moving: v=%.2f, ω=%.2f", linear_cmd, angular_cmd);
+    } else {
+      // 当前无有效指令，但立刻发一次停止还是留给看门狗？
+      // 为了快速响应，如果之前是运动状态，这里直接发一次停止
+      if (!stopped_) {
+        publishStop();
+      }
+      // 如果已经是 stopped_ == true，不需要重复发，看门狗也不动作
+    }
   }
 
   void handleSpeedButtons(const sensor_msgs::msg::Joy::SharedPtr &msg) {
@@ -285,6 +327,28 @@ private:
     }
   }
 
+  // ========== 停止发布辅助函数 ==========
+  void publishStop() {
+    geometry_msgs::msg::Twist stop;
+    vel_pub_->publish(stop);
+    last_nonzero_cmd_time_ = this->now(); // 更新，防止看门狗立即重复触发
+    stopped_ = true;
+    RCLCPP_INFO(this->get_logger(), "看门狗/强制停止已发送");
+  }
+
+  // ========== 看门狗回调 ==========
+  void watchdogCallback() {
+    if (stopped_)
+      return; // 已停止，不重复
+
+    double elapsed = (this->now() - last_nonzero_cmd_time_).seconds();
+    if (elapsed >= watchdog_timeout_) {
+      publishStop();
+      RCLCPP_WARN(this->get_logger(), "看门狗超时 (%.2fs) -> 强制停止",
+                  elapsed);
+    }
+  }
+
   int axis_linear_;
   int axis_angular_;
   double deadzone_ = 0.1;
@@ -304,6 +368,12 @@ private:
   // 低通滤波状态
   double prev_linear_ = 0.0;
   double prev_angular_ = 0.0;
+  // ✅ 看门狗相关新增变量
+  rclcpp::TimerBase::SharedPtr watchdog_timer_;
+  rclcpp::Time last_nonzero_cmd_time_;
+  double watchdog_timeout_ = 0.2;
+  double min_publish_cmd_ = 0.05;
+  bool stopped_ = true;
 };
 
 int main(int argc, char *argv[]) {

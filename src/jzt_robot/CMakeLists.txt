@@ -53,11 +53,36 @@ ament_target_dependencies(cmd_vel_relay_node
   tf2_ros
 )
 
+# ackermann_verifier_node
+add_executable(ackermann_verifier_node
+  src/ackermann_verifier_node.cpp
+)
+
+ament_target_dependencies(ackermann_verifier_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  sensor_msgs
+  tf2_ros
+)
+
+# ackermann_calib_trajectory_node
+add_executable(ackermann_calib_trajectory_node
+  src/ackermann_calib_trajectory_node.cpp
+)
+
+ament_target_dependencies(ackermann_calib_trajectory_node
+  rclcpp
+  geometry_msgs
+)
+
 # Install executables
 install(TARGETS
   gamepad_teleop_node
   odom_relay_node
   cmd_vel_relay_node
+  ackermann_verifier_node
+  ackermann_calib_trajectory_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

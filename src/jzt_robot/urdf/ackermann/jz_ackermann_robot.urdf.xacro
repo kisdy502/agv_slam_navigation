@@ -1,0 +1,84 @@
+<?xml version="1.0"?>
+<robot name="jzAckermannRobot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- 参数：是否包含 Gazebo 仿真内容，默认 1（仿真），真机设为 0 -->
+    <xacro:arg name="use_gazebo" default="1" />
+    <xacro:property name="use_gazebo" value="$(arg use_gazebo)" />
+
+    <!-- 包含所有宏文件 -->
+    <xacro:include filename="jz_ackermann_materials.xacro" />
+    <xacro:include filename="jz_ackermann_body.xacro" />
+    <xacro:include filename="jz_ackermann_wheels.xacro" />
+    <xacro:include filename="jz_ackermann_sensors.xacro" />
+    <xacro:include filename="jz_ackermann_gazebo_friction.xacro" />
+    <xacro:include filename="jz_ackermann_ros2_control.xacro" />
+
+    <!-- ========== 构建机器人 ========== -->
+    <!-- 基础车身 -->
+    <xacro:base_body use_gazebo="${use_gazebo}" />
+
+    <!-- 传感器 -->
+    <xacro:laser_sensor parent_link="base_link" use_gazebo="${use_gazebo}" />
+    <xacro:camera_sensor parent_link="base_link" use_gazebo="${use_gazebo}" />
+    <xacro:imu_sensor parent_link="base_link" use_gazebo="${use_gazebo}" />
+
+    <!-- 后轮（驱动轮） -->
+    <xacro:wheel_link name="left_rear" />
+    <xacro:wheel_link name="right_rear" />
+    <xacro:wheel_joint name="left_rear" parent="base_link" origin_xyz="-0.40 0.28 0"
+        axis_xyz="0 1 0" />
+    <xacro:wheel_joint name="right_rear" parent="base_link" origin_xyz="-0.40 -0.28 0"
+        axis_xyz="0 1 0" />
+
+    <!-- 前转向节 -->
+    <xacro:steer_link name="front_left" />
+    <xacro:steer_link name="front_right" />
+
+    <!-- 转向关节 -->
+    <joint name="front_left_steer_joint" type="revolute">
+        <parent link="base_link" />
+        <child link="front_left_steer_link" />
+        <origin xyz="0.40 0.28 0" rpy="0 0 0" />
+        <axis xyz="0 0 1" />
+        <limit lower="-0.523598" upper="0.523598" effort="100" velocity="3.0" />
+        <dynamics damping="0.05" friction="0.01" />
+    </joint>
+    <joint name="front_right_steer_joint" type="revolute">
+        <parent link="base_link" />
+        <child link="front_right_steer_link" />
+        <origin xyz="0.40 -0.28 0" rpy="0 0 0" />
+        <axis xyz="0 0 1" />
+        <limit lower="-0.523598" upper="0.523598" effort="100" velocity="3.0" />
+        <dynamics damping="0.05" friction="0.01" />
+    </joint>
+
+    <!-- 前轮 -->
+    <xacro:wheel_link name="left_front" />
+    <xacro:wheel_link name="right_front" />
+    <xacro:wheel_joint name="left_front" parent="front_left_steer_link" type="continuous"
+        origin_xyz="0 0 0" axis_xyz="0 1 0" />
+    <xacro:wheel_joint name="right_front" parent="front_right_steer_link" type="continuous"
+        origin_xyz="0 0 0" axis_xyz="0 1 0" />
+
+    <!-- Gazebo 摩擦配置（仅仿真） -->
+    <xacro:if value="${use_gazebo == 1}">
+        <xacro:wheel_friction name="left_rear" mu1="10.0" mu2="10.0" />
+        <xacro:wheel_friction name="right_rear" mu1="10.0" mu2="10.0" />
+        <xacro:wheel_friction name="left_front" mu1="10.0" mu2="0.5" />
+        <xacro:wheel_friction name="right_front" mu1="10.0" mu2="0.5" />
+
+        <!-- 物理引擎设置 -->
+        <gazebo>
+            <physics type="ode">
+                <max_step_size>0.001</max_step_size>
+                <real_time_factor>1.0</real_time_factor>
+                <real_time_update_rate>1000</real_time_update_rate>
+            </physics>
+        </gazebo>
+
+        <!-- ros2_control（仿真用） -->
+        <xacro:ackermann_ros2_control
+            controller_config_path="$(find jzt_robot)/config/ackermann_controllers.yaml" />
+    </xacro:if>
+
+</robot>

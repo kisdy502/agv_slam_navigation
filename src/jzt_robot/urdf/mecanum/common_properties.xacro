@@ -9,7 +9,7 @@
     <xacro:property name="base_box_x" value="1.1" />
     <xacro:property name="base_box_y" value="0.56" />
     <xacro:property name="base_box_z" value="0.216" />
-    <xacro:property name="base_mass" value="1.5" />
+    <xacro:property name="base_mass" value="30" />
     <!-- 底盘在 base_footprint 上的偏移，你的原值是 z=0.108 -->
     <xacro:property name="base_offset_z" value="0.108" />
 

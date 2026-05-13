@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- 普通驱动轮（后轮）宏 -->
+    <xacro:macro name="wheel_link" params="name prefix:=wheel">
+        <link name="${name}_wheel_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="1.57079 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.12" />
+                </geometry>
+                <material name="dark_grey" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="1.57079 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.12" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="1.5" />
+                <inertia ixx="0.003" ixy="0" ixz="0" iyy="0.003" iyz="0" izz="0.0054" />
+            </inertial>
+        </link>
+    </xacro:macro>
+
+    <!-- 转向节连杆 -->
+    <xacro:macro name="steer_link" params="name">
+        <link name="${name}_steer_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.04 0.03 0.03" />
+                </geometry>
+                <material name="grey" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.001 0.001 0.001" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.5" />
+                <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
+            </inertial>
+        </link>
+    </xacro:macro>
+
+    <!-- 车轮关节宏 -->
+    <xacro:macro name="wheel_joint" params="name parent type:=continuous origin_xyz axis_xyz">
+        <joint name="${name}_wheel_joint" type="${type}">
+            <parent link="${parent}" />
+            <child link="${name}_wheel_link" />
+            <origin xyz="${origin_xyz}" rpy="0 0 0" />
+            <axis xyz="${axis_xyz}" />
+            <limit effort="100" velocity="3.0" lower="-1e16" upper="1e16" />  <!-- continuous
+            不需要limit，但保留通用 -->
+        </joint>
+    </xacro:macro>
+
+</robot>

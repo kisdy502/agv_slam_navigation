@@ -31,9 +31,6 @@ def generate_launch_description():
     gazebo_world_path = os.path.join(pkg_share, f"world/{world_name}")
     gazebo_params_path = os.path.join(pkg_share, f"config/{gazebo_params_file_name}")
     
-    
-
-
     # 新增：是否使用仿真时间
     declare_use_sim_time = DeclareLaunchArgument(
         'use_sim_time',

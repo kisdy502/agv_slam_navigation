@@ -1,0 +1,315 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- ==================== 双激光雷达 ==================== -->
+    <xacro:macro name="laser_sensor" params="parent_link use_gazebo:=1">
+        <!-- 前向雷达（右前方） -->
+        <link name="laser_front_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.04" />
+                </geometry>
+                <material name="red" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.04" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.3" />
+                <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.00024" />
+            </inertial>
+        </link>
+        <joint name="laser_front_joint" type="fixed">
+            <parent link="${parent_link}" />
+            <child link="laser_front_link" />
+            <origin xyz="0.50 -0.20 0.35" rpy="0 0 -0.785398" />
+        </joint>
+
+        <!-- 后向雷达（左后方） -->
+        <link name="laser_rear_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.04" />
+                </geometry>
+                <material name="blue" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <cylinder length="0.08" radius="0.04" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.3" />
+                <inertia ixx="0.0002" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.00024" />
+            </inertial>
+        </link>
+        <joint name="laser_rear_joint" type="fixed">
+            <parent link="${parent_link}" />
+            <child link="laser_rear_link" />
+            <origin xyz="-0.50 0.20 0.35" rpy="0 0 2.35619" />
+        </joint>
+
+        <xacro:if value="${use_gazebo == 1}">
+            <!-- ==================== 前向雷达 Gazebo 插件 ==================== -->
+            <gazebo reference="laser_front_link">
+                <material>Gazebo/Red</material>
+                <sensor name="laser_front_sensor" type="ray">
+                    <always_on>true</always_on>
+                    <visualize>true</visualize>
+                    <update_rate>25</update_rate>
+                    <pose>0 0 0 0 0 0</pose>
+                    <ray>
+                        <scan>
+                            <horizontal>
+                                <samples>540</samples>
+                                <resolution>1.0</resolution>
+                                <time_increment>0.000074</time_increment>
+                                <min_angle>-2.35619</min_angle>
+                                <max_angle>2.35619</max_angle>
+                            </horizontal>
+                        </scan>
+                        <range>
+                            <min>0.15</min>
+                            <max>45.0</max>
+                            <resolution>0.01</resolution>
+                        </range>
+                        <noise>
+                            <type>gaussian</type>
+                            <mean>0.0</mean>
+                            <stddev>0.02</stddev>
+                        </noise>
+                    </ray>
+                    <plugin name="gazebo_ros_laser_front" filename="libgazebo_ros_ray_sensor.so">
+                        <ros>
+                            <namespace>/</namespace>
+                            <remapping>~/out:=scan_front</remapping>
+                        </ros>
+                        <topicName>scan_front</topicName>
+                        <frame_name>laser_front_link</frame_name>
+                        <output_type>sensor_msgs/LaserScan</output_type>
+                        <min_range>0.15</min_range>
+                        <max_range>45.0</max_range>
+                        <angle_min>-2.35619</angle_min>
+                        <angle_max>2.35619</angle_max>
+                        <scan_time>0.04</scan_time>
+                    </plugin>
+                </sensor>
+            </gazebo>
+
+            <!-- ==================== 后向雷达 Gazebo 插件 ==================== -->
+            <gazebo reference="laser_rear_link">
+                <material>Gazebo/Blue</material>
+                <sensor name="laser_rear_sensor" type="ray">
+                    <always_on>true</always_on>
+                    <visualize>true</visualize>
+                    <update_rate>25</update_rate>
+                    <pose>0 0 0 0 0 0</pose>
+                    <ray>
+                        <scan>
+                            <horizontal>
+                                <samples>540</samples>
+                                <resolution>1.0</resolution>
+                                <time_increment>0.000074</time_increment>
+                                <min_angle>-2.35619</min_angle>
+                                <max_angle>2.35619</max_angle>
+                            </horizontal>
+                        </scan>
+                        <range>
+                            <min>0.15</min>
+                            <max>45.0</max>
+                            <resolution>0.01</resolution>
+                        </range>
+                        <noise>
+                            <type>gaussian</type>
+                            <mean>0.0</mean>
+                            <stddev>0.02</stddev>
+                        </noise>
+                    </ray>
+                    <plugin name="gazebo_ros_laser_rear" filename="libgazebo_ros_ray_sensor.so">
+                        <ros>
+                            <namespace>/</namespace>
+                            <remapping>~/out:=scan_rear</remapping>
+                        </ros>
+                        <topicName>scan_rear</topicName>
+                        <frame_name>laser_rear_link</frame_name>
+                        <output_type>sensor_msgs/LaserScan</output_type>
+                        <min_range>0.15</min_range>
+                        <max_range>45.0</max_range>
+                        <angle_min>-2.35619</angle_min>
+                        <angle_max>2.35619</angle_max>
+                        <scan_time>0.04</scan_time>
+                    </plugin>
+                </sensor>
+            </gazebo>
+        </xacro:if>
+    </xacro:macro>
+
+    <!-- 摄像头 -->
+    <xacro:macro name="camera_sensor" params="parent_link use_gazebo:=1">
+        <link name="camera_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.12 0.03 0.03" />
+                </geometry>
+                <material name="black" />
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.12 0.03 0.03" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.2" />
+                <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0002" iyz="0" izz="0.0002" />
+            </inertial>
+        </link>
+        <link name="camera_optical_link" />
+        <joint name="camera_joint" type="fixed">
+            <parent link="${parent_link}" />
+            <child link="camera_link" />
+            <origin xyz="0.56 0 0.25" rpy="0 0 0" />
+        </joint>
+        <joint name="camera_optical_joint" type="fixed">
+            <parent link="camera_link" />
+            <child link="camera_optical_link" />
+            <origin xyz="0.06 0 0" rpy="-1.570796 0 -1.570796" />
+        </joint>
+
+        <xacro:if value="${use_gazebo == 1}">
+            <gazebo reference="camera_link">
+                <material>Gazebo/Black</material>
+                <sensor name="camera_sensor" type="camera">
+                    <camera>
+                        <horizontal_fov>1.047</horizontal_fov>
+                        <image>
+                            <width>640</width>
+                            <height>480</height>
+                            <format>R8G8B8</format>
+                        </image>
+                        <clip>
+                            <near>0.1</near>
+                            <far>100</far>
+                        </clip>
+                    </camera>
+                    <always_on>true</always_on>
+                    <update_rate>30</update_rate>
+                    <visualize>true</visualize>
+                    <plugin name="camera_plugin" filename="libgazebo_ros_camera.so">
+                        <ros>
+                            <remapping>~/image:=camera/image_raw</remapping>
+                            <remapping>~/camera_info:=camera/camera_info</remapping>
+                        </ros>
+                        <camera_name>camera</camera_name>
+                        <frame_name>camera_optical_link</frame_name>
+                        <hack_baseline>0.07</hack_baseline>
+                    </plugin>
+                </sensor>
+            </gazebo>
+        </xacro:if>
+    </xacro:macro>
+
+    <!-- IMU -->
+    <xacro:macro name="imu_sensor" params="parent_link use_gazebo:=1">
+        <link name="imu_link">
+            <visual>
+                <geometry>
+                    <box size="0.02 0.02 0.02" />
+                </geometry>
+            </visual>
+            <collision>
+                <geometry>
+                    <box size="0.02 0.02 0.02" />
+                </geometry>
+            </collision>
+            <inertial>
+                <mass value="0.1" />
+                <inertia ixx="0.000003" ixy="0" ixz="0" iyy="0.000003" iyz="0" izz="0.000003" />
+            </inertial>
+        </link>
+        <joint name="imu_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <parent link="${parent_link}" />
+            <child link="imu_link" />
+        </joint>
+
+        <xacro:if value="${use_gazebo == 1}">
+            <gazebo reference="imu_link">
+                <material>Gazebo/Purple</material>
+                <sensor name="imu_sensor" type="imu">
+                    <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+                        <ros>
+                            <remapping>~/out:=imu</remapping>
+                        </ros>
+                        <initial_orientation_as_reference>false</initial_orientation_as_reference>
+                        <frame_name>imu_link</frame_name>
+                    </plugin>
+                    <always_on>true</always_on>
+                    <update_rate>100</update_rate>
+                    <visualize>true</visualize>
+                    <imu>
+                        <angular_velocity>
+                            <x>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>2e-4</stddev>
+                                    <bias_mean>0.0000075</bias_mean>
+                                    <bias_stddev>0.0000008</bias_stddev>
+                                </noise>
+                            </x>
+                            <y>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>2e-4</stddev>
+                                    <bias_mean>0.0000075</bias_mean>
+                                    <bias_stddev>0.0000008</bias_stddev>
+                                </noise>
+                            </y>
+                            <z>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>2e-4</stddev>
+                                    <bias_mean>0.0000075</bias_mean>
+                                    <bias_stddev>0.0000008</bias_stddev>
+                                </noise>
+                            </z>
+                        </angular_velocity>
+                        <linear_acceleration>
+                            <x>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>1.7e-2</stddev>
+                                    <bias_mean>0.1</bias_mean>
+                                    <bias_stddev>0.001</bias_stddev>
+                                </noise>
+                            </x>
+                            <y>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>1.7e-2</stddev>
+                                    <bias_mean>0.1</bias_mean>
+                                    <bias_stddev>0.001</bias_stddev>
+                                </noise>
+                            </y>
+                            <z>
+                                <noise type="gaussian">
+                                    <mean>0.0</mean>
+                                    <stddev>1.7e-2</stddev>
+                                    <bias_mean>0.1</bias_mean>
+                                    <bias_stddev>0.001</bias_stddev>
+                                </noise>
+                            </z>
+                        </linear_acceleration>
+                    </imu>
+                </sensor>
+            </gazebo>
+        </xacro:if>
+    </xacro:macro>
+</robot>

@@ -106,3 +106,26 @@ x_ = [x, y, θ]ᵀ  // 位置 + 朝向
 ## 扩展
 
 室内机器人可将 `/gps` 替换为 ICP/激光配准的输出，实现室内定位融合。
+
+
+
+## ros2 常用完整依赖
+
+ros2 pkg create ros2_all_node \
+  --build-type ament_cmake \
+  --dependencies \
+  rclcpp \
+  std_msgs \
+  geometry_msgs \
+  sensor_msgs \
+  nav_msgs \
+  tf2 \
+  tf2_ros \
+  tf2_geometry_msgs \
+  tf2_sensor_msgs \
+  image_transport \
+  cv_bridge \
+  pcl_conversions \
+  eigen3_cmake_module \
+  visualization_msgs \
+  diagnostic_msgs

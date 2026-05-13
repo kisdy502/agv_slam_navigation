@@ -33,7 +33,7 @@
     <!-- Gazebo 加载控制器的插件 -->
     <gazebo>
         <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
-            <parameters>$(find jzt_robot)/config/mecanum_controllers.yaml</parameters>
+            <parameters>$(find jzt_robot)/config/ackermann_controllers.yaml</parameters>
         </plugin>
     </gazebo>
 

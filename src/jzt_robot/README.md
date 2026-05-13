@@ -17,7 +17,8 @@ ros2 launch jzt_robot gazebo_diff.launch.py
 ```bash
 conda deactivate
 source install/setup.bash
-ros2 launch jzt_robot gazebo_ackermann.launch.py
+ros2 launch jzt_robot gazebo_ackermann.launch.py \
+world_name:=jzt_factory_sz.world
 ```
 
 > **重要**: Gazebo 启动后保持运行，不要关闭。无论建图还是导航都基于此仿真环境。
@@ -37,23 +38,30 @@ ros2 launch jzt_robot gazebo_mecanum.launch.py use_sim_time:=true
 
 ### 2. 建图模式
 
-```bash
+````bash
 # 在新的终端中启动建图 + RViz
 conda deactivate
 source install/setup.bash
 ros2 launch jzt_robot slam.launch.py
 
+## 双雷达
+```bash
+ros2 launch slam.launch_double_lidar.py
+````
+
 # 键盘控制机器人移动（第三个终端）
+
 ros2 run teleop_twist_keyboard teleop_twist_keyboard
-```
+
+````
 
 **建图完成后保存地图:**
 
 ```bash
 ros2 service call /write_state \
     cartographer_ros_msgs/srv/WriteState \
-    "{filename: '/home/kisdy/maps/jzt_work_room_map.pbstream'}"
-```
+    "{filename: '/home/kisdy/maps/jzt_factory_map.pbstream'}"
+````
 
 > 建图完成后，关闭建图终端（Ctrl+C），再启动导航模式。
 
@@ -68,13 +76,42 @@ ros2 service call /write_state \
 conda deactivate
 source install/setup.bash
 ros2 launch jzt_robot navigation.launch.py \
-    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer_double_lidar.yaml \
+    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer_ackermann.yaml \
     pbstream_file:=/home/kisdy/maps/jzt_work_room_map.pbstream \
-    cmd_topic:=/cmd_vel \
+    cmd_topic:=/ackermann_steering_controller/reference_unstamped \
     use_sim_time:=true
 ```
 
 ## /opt/ros/humble/share/nav2_bt_navigator/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml
+
+## 双雷达导航启动
+
+```bash
+ros2 launch jzt_robot navigation.launch_double_lidar.py \
+    params_file:=/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer_ackermann_double_lidar.yaml \
+    pbstream_file:=/home/kisdy/maps/jzt_factory_map.pbstream \
+    cmd_topic:=/ackermann_steering_controller/reference_unstamped \
+    use_sim_time:=true
+```
+
+## 标定测试
+
+```bash
+# 圆形测试（半径 2.0m，留足余量）
+ros2 run jzt_robot ackermann_calib_trajectory_node --ros-args \
+  -p mode:=circle \
+  -p linear_velocity:=0.5 \
+  -p radius:=2.0 \
+  -p num_cycles:=3
+
+# 或者 8 字测试（半径 1.5m，接近极限但安全）
+ros2 run jzt_robot ackermann_calib_trajectory_node --ros-args \
+  -p mode:=figure8 \
+  -p linear_velocity:=0.5 \
+  -p radius:=1.8 \
+  -p num_cycles:=4
+
+```
 
 ---
 
@@ -174,7 +211,6 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 [bt_navigator-7] [ERROR] [1777536466.489215556] [bt_navigator]: Goal failed
 ```
 
-
 # 双雷达仿真遇到的坑
 
 ```
@@ -182,7 +218,7 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 
 
 
-        
+
   # Cartographer 定位节点
     cartographer_node = Node(
         package='cartographer_ros',
@@ -222,6 +258,7 @@ String value is: /home/kisdy/projects/agv_localization_ws/install/jzt_robot/shar
 # 将 xacro文件转成 urdf文件
 
 xacro src/jzt_robot/urdf/mecanum/robot.xacro > /tmp/test.urdf
+xacro src/jzt_robot/urdf/ackermann/jz_ackermann_robot.urdf.xacro > /tmp/test.urdf
 
 ## 发送移动控制命令
 
@@ -282,7 +319,3 @@ ros2 service list
 ros2 service type /service_name
 
 # 手动调用 service
-
-
-
-

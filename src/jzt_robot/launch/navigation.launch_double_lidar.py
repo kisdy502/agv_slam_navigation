@@ -42,7 +42,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('jzt_robot')
-    rviz_config = os.path.join(pkg_share, 'rviz', 'common_nav2.rviz')
+    rviz_config = os.path.join(pkg_share, 'rviz', 'nav2_double_lidar.rviz')
     # default_params_file = os.path.join(pkg_share, 'param', 'nav2_params_mppi_cartographer_mecanum.yaml')
     # nav2_param_path = LaunchConfiguration('params_file',default=os.path.join(pkg_share,'param','nav2_params_mppi_cartographer_mecanum.yaml'))
 
@@ -60,12 +60,12 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'configuration_basename',
-            default_value='localization_2d.lua',
-            description='Cartographer Lua配置文件，导航定位用localization_2d.lua'
+            default_value='localization_2d_double_lidar.lua',
+            description='Cartographer Lua配置文件，双雷达导航定位用localization_2d_double_lidar.lua'
         ),
         DeclareLaunchArgument(
             'nav2_params_file',
-            default_value='/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer.yaml',
+            default_value='/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/param/nav2_params_mppi_cartographer_ackermann_double_lidar.yaml',
             description='Full path to Nav2 param file to load'
         ),
         # 新增：遥控器控制的速度话题
@@ -102,7 +102,8 @@ def generate_launch_description():
             '--log-level', 'WARN',          # 只显示 ERROR 和 FATAL
         ],
         remappings=[
-            ('scan', '/scan'),
+            ('scan_1', '/scan_front'),      # 第一个雷达：/scan_1 → /scan_front
+            ('scan_2', '/scan_rear'),     # 第二个雷达：/scan_2 → /scan_rear
             ('odom', '/odom'),
             ('imu', '/imu'),  # 添加这行！
         ],
@@ -177,9 +178,11 @@ def generate_launch_description():
         name='ackermann_verifier',
         output='screen',
         parameters=[{
-            'wheelbase': 0.8,                          # 轴距，按实际填写
-            'max_steering_angle': 0.5236,                 # 最大转向角 (rad)
-            'steering_joint': 'front_left_steer_joint',      # 转向关节名（如果有 /joint_states）
+            'wheelbase': 0.8,                           # 轴距，按实际填写
+            'track_width': 0.56,                        # 轮距 (m)
+            'max_steering_angle': 0.5236,               # 最大转向角 (rad)
+            'steering_joint': 'front_left_steer_joint', # 转向关节名（如果有 /joint_states）
+            'right_steer_joint': 'front_right_steer_joint',  #精确模型左右都要
             'stop_timeout': 0.8,                        # 判定停止的超时秒数
             'max_stop_distance_error': 0.10,            # 最大允许距离误差 (m)
             'max_stop_heading_error': 5.0,              # 最大允许角度误差 (°)

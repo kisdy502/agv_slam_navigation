@@ -16,7 +16,7 @@ options = {
   use_odometry = true,  -- 启用里程计
   use_nav_sat = false,
   use_landmarks = false,
-  num_laser_scans = 1,
+  num_laser_scans = 2,
   num_multi_echo_laser_scans = 0,
   num_subdivisions_per_laser_scan = 1,  -- 仿真用1，真实雷达若运动畸变严重可增大
   num_point_clouds = 0,
@@ -25,9 +25,9 @@ options = {
   pose_publish_period_sec = 5e-3,
   trajectory_publish_period_sec = 30e-3,
   rangefinder_sampling_ratio = 1.,
-  odometry_sampling_ratio = 1.,
+  odometry_sampling_ratio = 0.85,
   fixed_frame_pose_sampling_ratio = 1.,
-  imu_sampling_ratio = 1.,
+  imu_sampling_ratio = 0.3,
   landmarks_sampling_ratio = 1.,
 }
 
@@ -42,11 +42,8 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
 -- 启用在线相关匹配（Real Time Correlative Scan Matcher）
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 
--- 在 2D builder 中明确启用 IMU
+-- 禁用 IMU：Gazebo 仿真中 IMU 数据格式与 Cartographer 不匹配
 TRAJECTORY_BUILDER_2D.use_imu_data = true
-
--- IMU 重力时间常数（用于姿态积分）
-TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 10.
 
 -- 累积雷达帧数，用于提高匹配稳定性
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 5
