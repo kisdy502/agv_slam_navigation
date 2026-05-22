@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+            <Sequence name="NavigateAndDock">
+
+                <!-- ====== 阶段 1：计算预停靠点 ====== -->
+                <!-- 预停靠点 = 目标点沿反方向偏移 0.8m -->
+                <!-- BUGFIX: 原来写的是 ComputeDockingStagingPose，但代码注册名是 ComputeStagingPose -->
+                <ComputeStagingPose
+                    goal="{goal}"
+                    staging_pose="{staging_pose}"
+                    distance="0.8" />
+
+                <!-- ====== 阶段 2：导航到预停靠点 ====== -->
+                <RecoveryNode number_of_retries="3" name="NavigateToStaging">
+                    <Sequence name="StagingSequence">
+                        <ComputePathToPose goal="{staging_pose}" path="{path}"
+                            planner_id="GridBased" />
+                        <FollowPath path="{path}" controller_id="FollowPath" />
+                        <GoalReached goal="{staging_pose}" xy_tolerance="0.20" yaw_tolerance="0.52" />
+                    </Sequence>
+                    <Sequence name="StagingRecovery">
+                        <ClearEntireCostmap name="ClearLocalCostmap"
+                            service_name="local_costmap/clear_entirely_local_costmap" />
+                        <Wait wait_duration="2" />
+                    </Sequence>
+                </RecoveryNode>
+
+                <!-- ====== 阶段 3：切换为 Docking 精修 ====== -->
+                <!-- 暂停 Nav2 Controller，启动自定义 Docking -->
+                <DeactivateController controller_name="FollowPath" />
+
+                <DockingAction
+                    target_frame="docking_target"
+                    xy_tolerance="0.05"
+                    yaw_tolerance="0.17"
+                    timeout="30.0" />
+
+                <!-- Docking 完成后，恢复 Nav2 Controller -->
+                <ActivateController controller_name="FollowPath" />
+
+            </Sequence>
+
+            <ReactiveFallback name="RecoveryFallback">
+                <GoalUpdated />
+                <RoundRobin name="RecoveryActions">
+                    <Sequence name="ClearingActions">
+                        <ClearEntireCostmap name="ClearLocalCostmap"
+                            service_name="local_costmap/clear_entirely_local_costmap" />
+                        <ClearEntireCostmap name="ClearGlobalCostmap"
+                            service_name="global_costmap/clear_entirely_global_costmap" />
+                    </Sequence>
+                    <Wait wait_duration="5" />
+                    <BackUp backup_dist="0.30" backup_speed="0.05" />
+                </RoundRobin>
+            </ReactiveFallback>
+        </RecoveryNode>
+    </BehaviorTree>
+</root>

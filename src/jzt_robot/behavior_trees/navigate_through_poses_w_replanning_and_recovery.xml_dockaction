@@ -2,32 +2,37 @@
 <root main_tree_to_execute="MainTree">
     <BehaviorTree ID="MainTree">
         <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-            <Sequence name="NavigateAndDock">
+            <Sequence name="NavigateThroughPosesAndDock">
 
-                <!-- 从 goal 自动计算 staging_pose -->
-                <ComputeStagingPose
-                    goal="{goal}"
-                    staging_pose="{staging_pose}"
-                    distance="0.75" />
+                <!-- ========== 阶段 1：多点导航（粗精度经过中间路点） ========== -->
+                <!-- goals：PoseStamped[] 数组，包含所有路点 -->
+                <!-- 中间路点使用粗精度（30cm/45度），不停留 -->
+                <ComputePathThroughPoses
+                    goals="{goals}"
+                    path="{path}"
+                    planner_id="GridBased" />
 
-                <!-- 阶段 1：Nav2 导航到预停靠点 -->
-                <ComputePathToPose goal="{staging_pose}" path="{path}" planner_id="GridBased" />
                 <FollowPath path="{path}" controller_id="FollowPath" />
-                <GoalReached goal="{staging_pose}" />
 
-                <!-- 阶段 2：Docking 精修 -->
+                <!-- 检查是否到达最后一个路点（粗精度，作为预停靠点） -->
+                <GoalReached goal="{goals.back}" />
+
+                <!-- ========== 阶段 2：最终停靠点精修 ========== -->
+                <!-- final_dock_pose：最终精确停靠位姿（由外部计算，如 AprilTag 检测） -->
+                <!-- 如果最后一个路点就是 docking 目标，可将 final_dock_pose 设为 goals.back -->
                 <DockingAction
-                    target="{goal}"
+                    target="{final_dock_pose}"
                     target_frame="docking_target"
                     xy_tolerance="0.05"
-                    timeout="30.0"
                     yaw_tolerance="0.17"
+                    timeout="30.0"
                     docking_success="{docking_success}" />
 
-                <!-- DockingAction 失败会自动让 Sequence 失败，RecoveryNode 处理 recovery -->
+                <!-- DockingAction 失败会自动让 Sequence 失败，RecoveryNode 会处理 recovery -->
 
             </Sequence>
 
+            <!-- ========== Recovery：重试策略 ========== -->
             <ReactiveFallback name="RecoveryFallback">
                 <GoalUpdated />
                 <RoundRobin name="RecoveryActions">

@@ -35,9 +35,9 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, TimerAction, LogInfo, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
-from launch_ros.actions import Node
 # import logging
-
+from launch_ros.actions import ComposableNodeContainer, Node
+from launch_ros.descriptions import ComposableNode
 # logging.getLogger().setLevel(logging.DEBUG)
 
 def generate_launch_description():
@@ -172,6 +172,19 @@ def generate_launch_description():
         }]
     )
     
+    cmd_vel_mux_node = Node(
+        package='jzt_robot',
+        executable='cmd_vel_mux_node',
+        name='cmd_vel_mux_node',
+        output='screen',        
+        parameters=[{
+            'output_topic': '/ackermann_steering_controller/reference_unstamped',
+            'timeout': 0.5,
+            'default_source': 'nav2',
+        }]
+    )
+
+    
     ackermannVerifier_node = Node(
         package='jzt_robot',
         executable='ackermann_verifier_node',          # 与 CMake 中 add_executable 同名
@@ -190,6 +203,42 @@ def generate_launch_description():
             'use_sim_time': use_sim_time,
         }]
     )
+    
+    docking_container = ComposableNodeContainer(
+        name='docking_container',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+            ComposableNode(
+                package='jzt_robot',
+                plugin='jzt_robot::DockingController',
+                name='docking_controller',
+                parameters=[{  # 传入参数
+                    'use_sim_time': use_sim_time,
+                    'controller_frequency': 50.0,
+                    'min_turning_radius': 1.40,
+                    'max_linear_vel': 0.3,
+                    'max_angular_vel': 0.5,
+                    'linear_kp': 1.0,
+                    'angular_kp': 2.0,
+                    'approach_linear_kp': 1.5,
+                    'approach_angular_kp': 3.0,
+                    'slowdown_distance': 0.5,
+                    'final_approach_distance': 0.15,
+                    'max_linear_accel': 1.0,
+                    'max_angular_accel': 2.0,
+                }],
+                remappings=[
+                    ('/odom', '/odom'),
+                    ('/cmd_vel_docking', '/cmd_vel_docking'),
+                ],
+            ),
+        ],
+        output='screen',
+    )
+
+
 
     return LaunchDescription([
         LogInfo(msg=['==========================================']),
@@ -201,12 +250,14 @@ def generate_launch_description():
 
         TimerAction(period=0.2, actions=[cartographer_node]),
         TimerAction(period=3.0, actions=[occupancy_grid_node]),
+         TimerAction(period=4.0, actions=[docking_container]),
         TimerAction(period=6.0, actions=[nav2_launch]),
         TimerAction(period=9.0, actions=[joy_node]),
         TimerAction(period=11.0, actions=[gamepad_teleop_node]),
         TimerAction(period=13.0, actions=[rviz_node]),
-        TimerAction(period=14.0, actions=[ackermannVerifier_node]),
-
+        # TimerAction(period=14.0, actions=[ackermannVerifier_node]),
+        TimerAction(period=15.0, actions=[cmd_vel_mux_node]),
+       
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),
     ])

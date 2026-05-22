@@ -1,0 +1,15 @@
+<library path="bt_docking_action">
+    <class name="bt_docking_action"
+        type="jzt_robot::BtDockingAction"
+        base_class_type="BT::ActionNodeBase">
+        <description>BT Action node for precise docking with Ackermann chassis</description>
+    </class>
+</library>
+
+<library path="bt_compute_staging_pose">
+    <class name="bt_compute_staging_pose"
+        type="jzt_robot::ComputeStagingPose"
+        base_class_type="BT::SyncActionNode">
+        <description>Compute staging pose from goal pose for docking</description>
+    </class>
+</library>

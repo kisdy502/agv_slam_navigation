@@ -1,0 +1,22 @@
+# Goal
+geometry_msgs/PoseStamped target_pose
+float32 xy_tolerance        # 默认 0.05m
+float32 yaw_tolerance       # 默认 0.17rad (10deg)
+float32 timeout             # 默认 30.0s
+string target_frame         # 目标参考帧，如 "docking_target"
+
+---
+# Result
+bool success
+float32 final_x_error
+float32 final_y_error
+float32 final_yaw_error
+string message
+
+---
+# Feedback
+uint8 phase                 # 0=approach, 1=align, 2=final_approach, 3=done
+float32 current_x_error
+float32 current_y_error
+float32 current_yaw_error
+float32 distance_to_target

@@ -8,16 +8,31 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)      # 也补上
+find_package(rclcpp_components REQUIRED)  # 也补上
 find_package(Eigen3 REQUIRED)
-find_package(sensor_msgs REQUIRED)   # Joy message
+find_package(sensor_msgs REQUIRED) # Joy message
 find_package(geometry_msgs REQUIRED) # Twist message
-find_package(nav_msgs REQUIRED)      # Odometry message
-find_package(tf2_ros REQUIRED)       # Transform broadcaster
+find_package(nav_msgs REQUIRED) # Odometry message
+find_package(tf2 REQUIRED)              # 新增！
+find_package(tf2_ros REQUIRED) # Transform broadcaster
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(behaviortree_cpp_v3 REQUIRED)
+find_package(nav2_behavior_tree REQUIRED)
+find_package(nav2_util REQUIRED)
+find_package(std_msgs REQUIRED)
+
+find_package(jzt_robot_msgs REQUIRED) # 你的自定义消息包
+find_package(pluginlib REQUIRED)
+
+
 
 include_directories(
   include
   ${EIGEN3_INCLUDE_DIRS}
 )
+
+add_subdirectory(src/utils)
 
 # Gamepad Teleop Node
 add_executable(gamepad_teleop_node
@@ -53,6 +68,18 @@ ament_target_dependencies(cmd_vel_relay_node
   tf2_ros
 )
 
+# cmd_vel_mux Node
+add_executable(cmd_vel_mux_node
+  src/cmd_vel_mux.cpp
+)
+
+ament_target_dependencies(cmd_vel_mux_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+  tf2_ros
+)
+
 # ackermann_verifier_node
 add_executable(ackermann_verifier_node
   src/ackermann_verifier_node.cpp
@@ -76,6 +103,70 @@ ament_target_dependencies(ackermann_calib_trajectory_node
   geometry_msgs
 )
 
+set(dependencies
+  rclcpp
+  rclcpp_action
+  rclcpp_components
+  geometry_msgs
+  nav_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  std_msgs          
+  behaviortree_cpp_v3
+  nav2_behavior_tree
+  nav2_util
+  jzt_robot_msgs
+  pluginlib
+)
+
+
+# ========== DockingController 组件 ==========
+add_library(docking_controller SHARED
+  src/docking_controller.cpp
+)
+target_include_directories(docking_controller PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(docking_controller ${dependencies})
+rclcpp_components_register_nodes(docking_controller "jzt_robot::DockingController")
+
+# ========== BT DockingAction 插件 ==========
+add_library(bt_docking_action SHARED
+  src/bt_docking_action.cpp
+)
+target_include_directories(bt_docking_action PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(bt_docking_action ${dependencies})
+
+target_compile_definitions(bt_docking_action PRIVATE BT_PLUGIN_EXPORT)
+
+# 关键：设置符号默认可见，否则 BT_RegisterNodesFromPlugin 被隐藏
+set_target_properties(bt_docking_action PROPERTIES
+  CXX_VISIBILITY_PRESET default
+  VISIBILITY_INLINES_HIDDEN NO
+)
+
+# ========== BT ComputeStagingPose 插件 ==========
+add_library(bt_compute_staging_pose SHARED
+  src/bt_compute_staging_pose.cpp
+)
+# BUGFIX: 原来写的是 ... 占位符，导致 bt_compute_staging_pose 编译时找不到 include 路径
+target_include_directories(bt_compute_staging_pose PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(bt_compute_staging_pose ${dependencies})
+target_compile_definitions(bt_compute_staging_pose PRIVATE BT_PLUGIN_EXPORT)
+set_target_properties(bt_compute_staging_pose PROPERTIES CXX_VISIBILITY_PRESET default VISIBILITY_INLINES_HIDDEN NO)
+
+# 导出 BT 插件
+pluginlib_export_plugin_description_file(behaviortree_cpp_v3 plugins.xml)
+
+
 # Install executables
 install(TARGETS
   gamepad_teleop_node
@@ -83,7 +174,27 @@ install(TARGETS
   cmd_vel_relay_node
   ackermann_verifier_node
   ackermann_calib_trajectory_node
+  cmd_vel_mux_node
   DESTINATION lib/${PROJECT_NAME}
+)
+
+# ========== 安装 ==========
+install(TARGETS docking_controller bt_docking_action bt_compute_staging_pose
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+install(DIRECTORY include/
+  DESTINATION include
+)
+
+install(DIRECTORY behavior_trees/
+  DESTINATION share/${PROJECT_NAME}/behavior_trees
+)
+
+install(FILES plugins.xml
+  DESTINATION share/${PROJECT_NAME}
 )
 
 # Install directories

@@ -1,0 +1,7 @@
+int32 target_number
+---
+bool success
+string message
+---
+int32 current_number
+float32 progress_percentage
