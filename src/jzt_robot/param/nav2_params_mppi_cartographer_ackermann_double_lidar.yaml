@@ -6,23 +6,27 @@ behavior_server:
     costmap_topic: local_costmap/costmap_raw
     footprint_topic: local_costmap/published_footprint
     cycle_frequency: 10.0
-    behavior_plugins: ["backup", "wait"]
+    behavior_plugins: ["backup", "drive_on_heading", "wait"]
     # spin:
-    #   plugin: "nav2_behaviors/Spin"   #阿克曼原地旋转无效，会卡住
-    # drive_on_heading:
-    #   plugin: "nav2_behaviors/DriveOnHeading"  #阿克曼同样无法原地旋转
+    #   plugin: "nav2_behaviors/Spin"   # 纯原地旋转，阿克曼无法执行
+    drive_on_heading:
+      plugin: "nav2_behaviors/DriveOnHeading"
+      acceleration_limit: 1.0 # 1.0 m/s², 在正常 max_accel 一半左右
+      deceleration_limit: -1.5 # -1.5 m/s², 刹车稍猛于加速（安全优先）
+      minimum_speed: 0.15 # 与 RPP 的 min_approach_linear_velocity 一致
+
     backup:
       plugin: "nav2_behaviors/BackUp"
     wait:
       plugin: "nav2_behaviors/Wait"
     global_frame: map
     robot_base_frame: base_link
-    transform_tolerance: 1.5 # 对应原AMCL的transform_tolerance
-    use_sim_time: True
+    transform_tolerance: 0.20 # 对应原AMCL的transform_tolerance
+    # use_sim_time: True
     simulate_ahead_time: 2.0
-    max_rotational_vel: 1.5
-    min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
+    # max_rotational_vel: 0.8 # 阿克曼不能原地转，降低角速度
+    # min_rotational_vel: 0.2
+    # rotational_acc_lim: 2.0
 
 ## 路径规划服务器
 planner_server:
@@ -49,13 +53,13 @@ planner_server:
       motion_model_for_search: "DUBIN" # 只能前进
       # motion_model_for_search: "REEDS_SHEPP"  # 可倒挡
 
-      minimum_turning_radius: 1.40 # ⚠️ 实测你的车最小转弯半径
+      minimum_turning_radius: 1.41 # ⚠️ 实测你的车最小转弯半径
 
       # 性能
       downsample_costmap: true
       downsampling_factor: 2
-      max_planning_time: 2.0
-      max_iterations: 500000
+      max_planning_time: 5.0 # 2.0→5.0, 长距离(>40m) DUBIN需要更多时间搜索
+      max_iterations: 1000000 # 500k→1M, 配合延长时间
       max_on_approach_iterations: 1000
 
       # 路径质量
@@ -63,24 +67,25 @@ planner_server:
 
       # 启发式与扩展
       analytic_expansion_ratio: 3.5
-      analytic_expansion_max_length: 3.0
+      analytic_expansion_max_length: 6.0 # 3.0→6.0, DUBIN末端连接需要更多空间
 
       # 惩罚项
       non_straight_penalty: 1.2
       change_penalty: 0.0
       reverse_penalty: 2.0 # Dubin 模式下无效，但留着无害
-      cost_penalty: 2.0
+      cost_penalty: 5.0
       retrospective_penalty: 0.015
 
       # 其他
       cache_obstacle_heuristic: false
       lookup_table_size: 20.0
 
-      # 平滑器参数（平级，非嵌套）
-      # ⚠️ tolerance/max_iterations 因同名冲突无法单独设，被 planner 值覆盖
-      w_data: 0.2
-      w_smooth: 0.3
-      do_refinement: true
+      smoother: # ← 添加这个嵌套层级
+        tolerance: 1.0e-10
+        max_iterations: 800
+        w_data: 0.2
+        w_smooth: 0.3
+        do_refinement: true
 
 planner_server_rclcpp_node:
   ros__parameters:
@@ -101,132 +106,202 @@ smoother_server:
       w_smooth: 0.3 # 平滑权重（越大曲线越顺滑）
 
 # 控制器服务器 - MPPI (保持原有配置)
+# controller_server:
+#   ros__parameters:
+#     controller_plugins: ["FollowPath"]
+#     controller_frequency: 20.0
+#     min_x_velocity_threshold: 0.001
+#     min_y_velocity_threshold: 0.5
+#     min_theta_velocity_threshold: 0.001
+#     failure_tolerance: 0.3
+#     progress_checker_plugin: "progress_checker"
+#     goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
+#     speed_limit_topic: "speed_limit"
+
+#     progress_checker:
+#       plugin: "nav2_controller::SimpleProgressChecker"
+#       required_movement_radius: 0.5 # 这两个参数：10 秒内移动距离小于 0.5m
+#       movement_time_allowance: 10.0
+
+#     general_goal_checker:
+#       stateful: True
+#       plugin: "nav2_controller::SimpleGoalChecker"
+#       xy_goal_tolerance: 0.10
+#       yaw_goal_tolerance: 0.20 # 收紧到 11.5°，确保预停靠点朝向足够精准，给精调留余量
+
+#     FollowPath:
+#       plugin: "nav2_mppi_controller::MPPIController"
+#       time_steps: 36 #预测更远
+#       model_dt: 0.05
+#       batch_size: 2000
+#       vx_std: 0.3
+#       vy_std: 0.0 # 阿克曼无横向移动，缩小采样范围避免浪费轨迹
+#       wz_std: 0.4 # 降低角速度采样
+#       vx_max: 1.5
+#       vx_min: -0.35
+#       vy_max: 0.01 # 阿克曼底盘，也不需要横向移动，平移
+#       wz_max: 1.2 # 角速度
+#       ax_max: 1.2 # 必须显式设置！从0加速到1.5只需0.75s
+#       ax_min: -1.0
+#       iteration_count: 1
+#       prune_distance: 2.7
+#       transform_tolerance: 0.3 #变换容差，仿真调大点
+#       temperature: 0.8
+#       gamma: 0.02
+#       motion_model: "Ackermann"
+#       visualize: false #调试用，查看最优轨迹和选中的轨迹
+#       TrajectoryVisualizer:
+#         trajectory_step: 5
+#         time_step: 3
+#       AckermannConstraints:
+#         min_turning_r: 1.50
+#       critics:
+#         [
+#           "ConstraintCritic",
+#           "CostCritic",
+#           "GoalCritic",
+#           "PathAlignCritic",
+#           "PathFollowCritic",
+#           "PathAngleCritic",
+#           "PreferForwardCritic",
+#         ]
+#       ConstraintCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 4.0
+#       GoalCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 12.0
+#         threshold_to_consider: 4.0
+#       GoalAngleCritic:
+#         enabled: True # 阿克曼禁用！朝向由 DUBIN路径+PathFollowCritic 保证
+#         cost_power: 1
+#         cost_weight: 1.0
+#         threshold_to_consider: 0.4
+#       PreferForwardCritic: #负责加速
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 2.0
+#         threshold_to_consider: 0.5
+#       ObstaclesCritic: #负责避障
+#         enabled: True
+#         cost_power: 1
+#         repulsion_weight: 9.5
+#         critical_weight: 20.0
+#         consider_footprint: false
+#         collision_cost: 10000.0
+#         collision_margin_distance: 0.4
+#         near_goal_distance: 0.5
+#       CostCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 5.0
+#         critical_cost: 300.0
+#         consider_footprint: True
+#         collision_cost: 1000000.0
+#         near_goal_distance: 1.0
+#       PathAlignCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 4.0
+#         max_path_occupancy_ratio: 0.05
+#         trajectory_point_step: 3
+#         threshold_to_consider: 1.0
+#         offset_from_furthest: 15
+#         use_path_orientations: false
+#       PathFollowCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 10.0 # 加强路径忠实度，确保末端以路径规划的朝向到达
+#         offset_from_furthest: 5
+#         threshold_to_consider: 0.4
+#       PathAngleCritic:
+#         enabled: True
+#         cost_power: 1
+#         cost_weight: 3.0 # 配合 PathFollow 保证轨迹角度对齐路径
+#         offset_from_furthest: 4
+#         threshold_to_consider: 0.5
+#         max_angle_to_furthest: 1.0
+#         forward_preference: true
+#       # VelocityDeadbandCritic:
+#       #   enabled: True
+#       #   cost_power: 1
+#       #   cost_weight: 35.0
+#       #   deadband_velocities: [0.05, 0.05, 0.05]
+#       # TwirlingCritic:
+#       #   enabled: true
+#       #   twirling_cost_power: 1
+#       #   twirling_cost_weight: 10.0
+
 controller_server:
   ros__parameters:
-    controller_plugins: ["FollowPath"]
-    controller_frequency: 20.0
-    min_x_velocity_threshold: 0.001
-    min_y_velocity_threshold: 0.5
-    min_theta_velocity_threshold: 0.001
-    failure_tolerance: 0.3
-    progress_checker_plugin: "progress_checker"
-    goal_checker_plugins: ["general_goal_checker"] # "precise_goal_checker"
-    speed_limit_topic: "speed_limit"
+    controller_frequency: 12.0 # 20→15, RPP+碰撞检测+代价缩放 CPU 吃紧
+    use_sim_time: True
 
+    controller_plugins: ["FollowPath"]
+
+    progress_checker_plugin: "progress_checker"
+    goal_checker_plugins: ["general_goal_checker"]
+
+    speed_limit_topic: "speed_limit"
+    # default_goal_checker: "general_goal_checker"
+
+    # -------------------------
+    # 进度检查器
+    # -------------------------
     progress_checker:
       plugin: "nav2_controller::SimpleProgressChecker"
-      required_movement_radius: 0.5 # 这两个参数：10 秒内移动距离小于 0.5m
+      required_movement_radius: 0.5
       movement_time_allowance: 10.0
 
+    # -------------------------
+    # 目标检查器（⚠️ 非常关键）
+    # -------------------------
     general_goal_checker:
-      stateful: True
       plugin: "nav2_controller::SimpleGoalChecker"
-      xy_goal_tolerance: 0.10
-      yaw_goal_tolerance: 0.44 # 朝向靠 DUBIN路径+PathFollowCritic 保证，保留合理容差
+      stateful: false
+      xy_goal_tolerance: 0.08 # 11cm, 阿克曼粗定位
+      yaw_goal_tolerance: 0.30 # 20°, 避免兜圈
 
+    # -------------------------
+    # Regulated Pure Pursuit
+    # -------------------------
     FollowPath:
-      plugin: "nav2_mppi_controller::MPPIController"
-      time_steps: 36 #预测更远
-      model_dt: 0.05
-      batch_size: 2000
-      vx_std: 0.3
-      vy_std: 0.0 # 阿克曼无横向移动，缩小采样范围避免浪费轨迹
-      wz_std: 0.4 # 降低角速度采样
-      vx_max: 1.5
-      vx_min: -0.35
-      vy_max: 0.01 # 阿克曼底盘，也不需要横向移动，平移
-      wz_max: 1.2 # 角速度
-      ax_max: 1.2 # 必须显式设置！从0加速到1.5只需0.75s
-      ax_min: -1.0
-      iteration_count: 1
-      prune_distance: 2.7
-      transform_tolerance: 0.3 #变换容差，仿真调大点
-      temperature: 0.8
-      gamma: 0.02
-      motion_model: "Ackermann"
-      visualize: true #调试用，查看最优轨迹和选中的轨迹
-      TrajectoryVisualizer:
-        trajectory_step: 5
-        time_step: 3
-      AckermannConstraints:
-        min_turning_r: 1.40
-      critics: [
-          "ConstraintCritic",
-          "CostCritic",
-          "GoalCritic",
-          "PathAlignCritic",
-          "PathFollowCritic",
-          # "PathAngleCritic",
-          "PreferForwardCritic",
-        ]
-      ConstraintCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 4.0
-      GoalCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 12.0
-        threshold_to_consider: 4.0
-      GoalAngleCritic:
-        enabled: False # 阿克曼禁用！朝向由 DUBIN路径+PathFollowCritic 保证
-        cost_power: 1
-        cost_weight: 1.0
-        threshold_to_consider: 0.4
-      PreferForwardCritic: #负责加速
-        enabled: True
-        cost_power: 1
-        cost_weight: 2.0
-        threshold_to_consider: 0.5
-      ObstaclesCritic: #负责避障
-        enabled: True
-        cost_power: 1
-        repulsion_weight: 9.5
-        critical_weight: 20.0
-        consider_footprint: false
-        collision_cost: 10000.0
-        collision_margin_distance: 0.4
-        near_goal_distance: 0.5
-      CostCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 5.0
-        critical_cost: 300.0
-        consider_footprint: True
-        collision_cost: 1000000.0
-        near_goal_distance: 1.0
-      PathAlignCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 4.0
-        max_path_occupancy_ratio: 0.05
-        trajectory_point_step: 3
-        threshold_to_consider: 1.0
-        offset_from_furthest: 15
-        use_path_orientations: false
-      PathFollowCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 10.0 # 加强路径忠实度，确保末端以路径规划的朝向到达
-        offset_from_furthest: 5
-        threshold_to_consider: 0.4
-      PathAngleCritic:
-        enabled: True
-        cost_power: 1
-        cost_weight: 3.0 # 配合 PathFollow 保证轨迹角度对齐路径
-        offset_from_furthest: 4
-        threshold_to_consider: 0.5
-        max_angle_to_furthest: 1.0
-        forward_preference: true
-      # VelocityDeadbandCritic:
-      #   enabled: True
-      #   cost_power: 1
-      #   cost_weight: 35.0
-      #   deadband_velocities: [0.05, 0.05, 0.05]
-      # TwirlingCritic:
-      #   enabled: true
-      #   twirling_cost_power: 1
-      #   twirling_cost_weight: 10.0
+      plugin: "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController"
+
+      # ===== 基本速度 =====
+      desired_linear_vel: 0.80
+      # ===== Lookahead（阿克曼核心）=====
+      lookahead_dist: 1.2
+      min_lookahead_dist: 0.6
+      max_lookahead_dist: 2.5
+      use_regulated_linear_velocity_scaling: true
+
+      use_velocity_scaled_lookahead: true
+      lookahead_time: 1.2
+
+      # ===== 转向控制 =====
+      use_rotate_to_heading: false
+      rotate_to_heading_angular_vel: 0.6
+
+      min_approach_linear_velocity: 0.10
+      approach_velocity_scaling_dist: 2.0
+
+      regulated_linear_scaling_min_radius: 1.41 # ← 用最小转弯半径代替steering angle
+      regulated_linear_scaling_min_speed: 0.15
+
+      # ===== 代价图避障（根据 costmap 代价自动减速，核心避障机制）=====
+      use_cost_regulated_linear_velocity_scaling: true
+      inflation_cost_scaling_factor: 3.0
+      cost_scaling_dist: 0.6
+      cost_scaling_gain: 1.0
+
+      # ===== 碰撞保护 =====
+      use_collision_detection: true
+      max_allowed_time_to_collision: 0.5 # 只前瞻0.5s, 避免空旷区域误报
+      # ===== 调试 =====
+      visualize: false
 
 controller_server_rclcpp_node:
   ros__parameters:
@@ -239,6 +314,7 @@ local_costmap:
       update_frequency: 15.0
       publish_frequency: 5.0
       global_frame: odom
+      transform_tolerance: 0.25       
       robot_base_frame: base_link
       use_sim_time: True
       rolling_window: True
@@ -250,11 +326,12 @@ local_costmap:
       plugins: ["static_layer", "obstacle_layer", "inflation_layer"]
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 6.0
-        inflation_radius: 0.4
+        cost_scaling_factor: 3.0 # 代价平缓衰减, 远离障碍
+        inflation_radius: 0.8 # 0.6→0.8, 增大排斥区, 避免贴墙走
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        transform_tolerance: 0.25 # 允许激光帧与tf偏差0.25s, 消除Message Filter丢帧导致的像素噪点
         observation_sources: scan_front scan_rear
         scan_front:
           topic: /scan_front
@@ -303,6 +380,7 @@ global_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
+        transform_tolerance: 0.85
         observation_sources: scan_front scan_rear
         scan_front:
           topic: /scan_front
@@ -329,8 +407,8 @@ global_costmap:
         map_subscribe_transient_local: True
       inflation_layer:
         plugin: "nav2_costmap_2d::InflationLayer"
-        cost_scaling_factor: 10.0
-        inflation_radius: 0.80
+        cost_scaling_factor: 3.0 # 10→3, 与局部匹配, 代价平缓
+        inflation_radius: 1.2 # 0.8→1.2, 全局路径远离障碍, 避免规划器偏好密集区
       always_send_full_costmap: True
 
   global_costmap_client:
@@ -364,7 +442,7 @@ bt_navigator:
     bt_loop_duration: 100 # 从10改为100，单位是毫秒，即10Hz
     default_server_timeout: 5000 # 从20改为5000，单位毫秒，即5秒
     default_nav_through_poses_bt_xml: "/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/behavior_trees/navigate_through_poses_w_replanning_and_recovery.xml"
-    default_nav_to_pose_bt_xml: "/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/behavior_trees/navigate_to_pose_w_replanning_and_recovery.xml"
+    default_nav_to_pose_bt_xml: "/home/kisdy/projects/agv_localization_ws/install/jzt_robot/share/jzt_robot/behavior_trees/rpp_nav_to_pose.xml"
     plugin_lib_names:
       - nav2_compute_path_to_pose_action_bt_node
       - nav2_compute_path_through_poses_action_bt_node
@@ -407,9 +485,10 @@ bt_navigator:
       - nav2_wait_cancel_bt_node
       - nav2_back_up_cancel_bt_node
       - nav2_drive_on_heading_cancel_bt_node
-      # 添加自定义 DockingAction 插件
-      - bt_docking_action
-      - bt_compute_staging_pose
+      # 自定义 BT 插件
+      - bt_set_nav2_param # SetNav2Param: 运行时动态修改 Nav2 参数
+      # - bt_docking_action
+      # - bt_compute_staging_pose
 
 bt_navigator_rclcpp_node:
   ros__parameters:
@@ -424,7 +503,7 @@ velocity_smoother:
     max_velocity: [1.5, 0.0, 1.2] # [vx_max, vy_max, wz_max]
     min_velocity: [-0.35, 0.0, -1.2] # [vx_min, vy_min, wz_min]
     max_accel: [2.5, 0.0, 3.2] # [ax_max, ay_max, aw_max]
-    min_accel: [-2.5, 0.0, -3.2] # [ax_min, ay_min, aw_min]
+    max_decel: [-2.5, 0.0, -3.2] # [ax_min, ay_min, aw_min]
     odom_topic: "/odom"
     odom_duration: 0.1
     deadband_velocity: [0.0, 0.0, 0.0]

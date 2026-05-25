@@ -14,6 +14,9 @@ __pycache__/
 *.swp
 *.swo
 
+# 代码分析工具
+.deepcode/
+
 # OS
 .DS_Store
 Thumbs.db

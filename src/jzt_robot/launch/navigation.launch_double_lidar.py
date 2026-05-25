@@ -167,8 +167,9 @@ def generate_launch_description():
         name='gamepad_teleop_node',
         output='screen',
         parameters=[{
-            'cmd_topic': LaunchConfiguration('cmd_topic'),       # 从启动参数传入
+            'cmd_topic': LaunchConfiguration('cmd_topic'),
             'use_sim_time': use_sim_time,
+            'watchdog_timeout': 0.8,   # 摇杆断连0.8秒后停车，松手主动发停不会被误杀
         }]
     )
     
@@ -250,13 +251,13 @@ def generate_launch_description():
 
         TimerAction(period=0.2, actions=[cartographer_node]),
         TimerAction(period=3.0, actions=[occupancy_grid_node]),
-         TimerAction(period=4.0, actions=[docking_container]),
+        #  TimerAction(period=4.0, actions=[docking_container]),
         TimerAction(period=6.0, actions=[nav2_launch]),
         TimerAction(period=9.0, actions=[joy_node]),
         TimerAction(period=11.0, actions=[gamepad_teleop_node]),
         TimerAction(period=13.0, actions=[rviz_node]),
         # TimerAction(period=14.0, actions=[ackermannVerifier_node]),
-        TimerAction(period=15.0, actions=[cmd_vel_mux_node]),
+        # TimerAction(period=15.0, actions=[cmd_vel_mux_node]),
        
         LogInfo(msg=['导航节点 + 手柄遥控 + RViz 已启动']),
         LogInfo(msg=['在RViz中设置2D Goal启动自主导航，或使用手柄手动控制']),

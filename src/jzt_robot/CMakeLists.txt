@@ -163,6 +163,18 @@ ament_target_dependencies(bt_compute_staging_pose ${dependencies})
 target_compile_definitions(bt_compute_staging_pose PRIVATE BT_PLUGIN_EXPORT)
 set_target_properties(bt_compute_staging_pose PROPERTIES CXX_VISIBILITY_PRESET default VISIBILITY_INLINES_HIDDEN NO)
 
+# ========== BT SetNav2Param 插件 ==========
+add_library(bt_set_nav2_param SHARED
+  src/bt_set_nav2_param.cpp
+)
+target_include_directories(bt_set_nav2_param PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+ament_target_dependencies(bt_set_nav2_param ${dependencies})
+target_compile_definitions(bt_set_nav2_param PRIVATE BT_PLUGIN_EXPORT)
+set_target_properties(bt_set_nav2_param PROPERTIES CXX_VISIBILITY_PRESET default VISIBILITY_INLINES_HIDDEN NO)
+
 # 导出 BT 插件
 pluginlib_export_plugin_description_file(behaviortree_cpp_v3 plugins.xml)
 
@@ -179,7 +191,7 @@ install(TARGETS
 )
 
 # ========== 安装 ==========
-install(TARGETS docking_controller bt_docking_action bt_compute_staging_pose
+install(TARGETS docking_controller bt_docking_action bt_compute_staging_pose bt_set_nav2_param
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

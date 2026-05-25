@@ -13,3 +13,11 @@
         <description>Compute staging pose from goal pose for docking</description>
     </class>
 </library>
+
+<library path="bt_set_nav2_param">
+    <class name="bt_set_nav2_param"
+        type="jzt_robot::SetNav2Param"
+        base_class_type="BT::SyncActionNode">
+        <description>Dynamically set Nav2 node parameters at runtime</description>
+    </class>
+</library>

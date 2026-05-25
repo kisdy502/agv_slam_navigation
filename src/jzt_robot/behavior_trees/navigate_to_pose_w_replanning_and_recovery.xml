@@ -1,42 +1,36 @@
-<?xml version="1.0"?>
+
+<!--
+  This Behavior Tree replans the global path periodically at 1 Hz and it also has
+  recovery actions specific to planning / control as well as general system issues.
+  This will be continuous if a kinematically valid planner is selected.
+-->
 <root main_tree_to_execute="MainTree">
     <BehaviorTree ID="MainTree">
         <RecoveryNode number_of_retries="6" name="NavigateRecovery">
-            <Sequence name="NavigateAndDock">
-
-                <!-- 从 goal 自动计算 staging_pose -->
-                <ComputeStagingPose
-                    goal="{goal}"
-                    staging_pose="{staging_pose}"
-                    distance="0.75" />
-
-                <!-- 阶段 1：Nav2 导航到预停靠点 -->
-                <ComputePathToPose goal="{staging_pose}" path="{path}" planner_id="GridBased" />
-                <FollowPath path="{path}" controller_id="FollowPath" />
-                <GoalReached goal="{staging_pose}" />
-
-                <!-- 阶段 2：Docking 精修 -->
-                <DockingAction
-                    target="{goal}"
-                    target_frame="docking_target"
-                    xy_tolerance="0.05"
-                    timeout="30.0"
-                    yaw_tolerance="0.17"
-                    docking_success="{docking_success}" />
-
-                <!-- DockingAction 失败会自动让 Sequence 失败，RecoveryNode 处理 recovery -->
-
-            </Sequence>
-
+            <PipelineSequence name="NavigateWithReplanning">
+                <RateController hz="1.0">
+                    <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+                        <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased" />
+                        <ClearEntireCostmap name="ClearGlobalCostmap-Context"
+                            service_name="global_costmap/clear_entirely_global_costmap" />
+                    </RecoveryNode>
+                </RateController>
+                <RecoveryNode number_of_retries="1" name="FollowPath">
+                    <FollowPath path="{path}" controller_id="FollowPath" />
+                    <ClearEntireCostmap name="ClearLocalCostmap-Context"
+                        service_name="local_costmap/clear_entirely_local_costmap" />
+                </RecoveryNode>
+            </PipelineSequence>
             <ReactiveFallback name="RecoveryFallback">
                 <GoalUpdated />
                 <RoundRobin name="RecoveryActions">
                     <Sequence name="ClearingActions">
-                        <ClearEntireCostmap name="ClearLocalCostmap"
+                        <ClearEntireCostmap name="ClearLocalCostmap-Subtree"
                             service_name="local_costmap/clear_entirely_local_costmap" />
-                        <ClearEntireCostmap name="ClearGlobalCostmap"
+                        <ClearEntireCostmap name="ClearGlobalCostmap-Subtree"
                             service_name="global_costmap/clear_entirely_global_costmap" />
                     </Sequence>
+                    <!-- <Spin spin_dist="1.57" /> -->
                     <Wait wait_duration="5" />
                     <BackUp backup_dist="0.30" backup_speed="0.05" />
                 </RoundRobin>

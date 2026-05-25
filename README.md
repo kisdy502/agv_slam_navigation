@@ -77,3 +77,7 @@ ros2 run rqt_plot rqt_plot "/odom/twist/twist/linear/x"
 ```
 
 ```
+
+通读 Nav2 导航框架核心组件源码（nav2_smac_planner、nav2_regulated_pure_pursuit_controller、nav2_mppi_controller、nav2_behavior_tree），深入理解 Hybrid A* 的 SE2 状态空间搜索、Dubin/Reeds-Shepp 运动基元生成、Analytic Expansion 解析连接以及 Regulated Pure Pursuit 的多层调速与碰撞保护机制。能够从**运动学约束（最小转弯半径、非完整性）**出发，进行规划器/控制器的对比选型（Navfn vs SmacHybrid、MPPI vs RPP），并基于源码审计排查配置中的"幻觉参数"（不存在于源码的无效配置项），确保参数与算法行为的精确匹配。
+熟练应用 A*/Dijkstra 进行全局路径规划，掌握 DWA/TEB/MPPI 等局部轨迹规划与避障算法的原理与适用场景，能根据底盘类型（差速/阿克曼/麦克纳姆）进行算法选型与参数调优。
+基于 Nav2 Behavior Tree 机制，理解 Recovery 行为（Backup、DriveOnHeading）的触发逻辑与参数传递链路，能够根据阿克曼底盘的运动学限制定制故障恢复策略。
