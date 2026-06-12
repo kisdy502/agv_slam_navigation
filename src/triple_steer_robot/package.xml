@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>triple_steer_robot</name>
+  <version>0.0.1</version>
+  <description>Triple steering wheel robot simulation with 3D LiDAR support</description>
+  <maintainer email="bwply2009@163.com">kisdy</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Core ROS2 dependencies -->
+  <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
+  <depend>eigen</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>joy</depend>
+
+  <!-- TF -->
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <!-- Simulation & Visualization -->
+  <depend>gazebo_ros</depend>
+  <depend>gazebo_ros2_control</depend>
+  <depend>ros2_control</depend>
+  <depend>ros2_controllers</depend>
+  <depend>joint_state_broadcaster</depend>
+  <depend>velocity_controllers</depend>
+  <depend>ackermann_steering_controller</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>xacro</depend>
+
+  <!-- Navigation2 / BehaviorTree -->
+  <depend>behaviortree_cpp_v3</depend>
+  <depend>nav2_behavior_tree</depend>
+  <depend>nav2_util</depend>
+  <depend>pluginlib</depend>
+
+  <!-- 3D LiDAR description (optional, for Velodyne-like sensors) -->
+  <depend>velodyne_description</depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

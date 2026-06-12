@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="triple_steer_robot">
+
+  <!-- ==================== Global Properties ==================== -->
+  <xacro:property name="base_length" value="0.8" />
+  <xacro:property name="base_width" value="0.6" />
+  <xacro:property name="base_height" value="0.3" />
+  <xacro:property name="base_mass" value="50.0" />
+  <xacro:property name="wheel_radius" value="0.1" />
+  <xacro:property name="wheel_width" value="0.05" />
+  <xacro:property name="wheel_mass" value="2.0" />
+
+  <!-- ==================== Includes ==================== -->
+  <xacro:include filename="$(find triple_steer_robot)/urdf/robot_base.xacro" />
+  <xacro:include filename="$(find triple_steer_robot)/urdf/sensors.xacro" />
+  <xacro:include filename="$(find triple_steer_robot)/urdf/ros2_control.xacro" />
+
+  <!-- ==================== Base Link ==================== -->
+  <link name="base_footprint">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.001 0.001 0.001" />
+      </geometry>
+    </visual>
+  </link>
+
+  <xacro:robot_base
+    name="base_link"
+    length="${base_length}"
+    width="${base_width}"
+    height="${base_height}"
+    mass="${base_mass}"
+    wheel_radius="${wheel_radius}"
+    wheel_width="${wheel_width}"
+    wheel_mass="${wheel_mass}" />
+
+  <!-- base_link 中心离地高度 = wheel_radius + height/2 + ground_clearance(0.05) -->
+  <xacro:property name="base_center_z" value="0.3" />
+
+  <joint name="base_joint" type="fixed">
+    <parent link="base_footprint" />
+    <child link="base_link" />
+    <origin xyz="0 0 ${base_center_z}" rpy="0 0 0" />
+  </joint>
+
+  <!-- ==================== Sensors ==================== -->
+  <xacro:sensors parent="base_link" />
+
+  <!-- ==================== ROS2 Control ==================== -->
+  <xacro:ros2_control />
+
+</robot>

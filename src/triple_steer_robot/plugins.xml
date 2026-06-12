@@ -1,0 +1,10 @@
+<library path="">
+  <!-- TODO: Add your BehaviorTree or pluginlib plugins here -->
+  <!--
+  <class name="my_action"
+      type="triple_steer_robot::MyAction"
+      base_class_type="BT::SyncActionNode">
+      <description>Description of the plugin</description>
+  </class>
+  -->
+</library>

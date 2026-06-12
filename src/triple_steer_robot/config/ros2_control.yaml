@@ -1,0 +1,25 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # TODO: Configure your triple-steer controller here
+    # Options:
+    #   - Use forward_command_controller + IK node
+    #   - Implement a custom triple_steer_controller
+    triple_steer_controller:
+      type: forward_command_controller/ForwardCommandController
+
+# TODO: Add controller-specific parameters
+triple_steer_controller:
+  ros__parameters:
+    joints:
+      - front_steer_joint
+      - front_wheel_joint
+      - left_steer_joint
+      - left_wheel_joint
+      - right_steer_joint
+      - right_wheel_joint
+    interface_name: velocity

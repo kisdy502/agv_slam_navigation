@@ -1,0 +1,174 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    三舵轮底盘宏定义
+    三个舵轮呈三角形/等边三角形分布，每个轮子可独立转向和驱动
+  -->
+  <xacro:macro name="robot_base" params="name length width height mass
+                                          wheel_radius wheel_width wheel_mass">
+
+    <link name="${name}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="${length} ${width} ${height}" />
+        </geometry>
+        <material name="blue">
+          <color rgba="0.2 0.4 0.8 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="${length} ${width} ${height}" />
+        </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="${mass}" />
+        <inertia
+          ixx="${(1.0/12.0) * mass * (width*width + height*height)}"
+          iyy="${(1.0/12.0) * mass * (length*length + height*height)}"
+          izz="${(1.0/12.0) * mass * (length*length + width*width)}"
+          ixy="0.0" ixz="0.0" iyz="0.0" />
+      </inertial>
+    </link>
+
+    <!-- 等边三角形布局，中心到轮子距离 R=0.25m -->
+    <xacro:property name="R" value="0.25" />
+    <xacro:property name="sqrt3_2" value="0.86602540378" />
+
+    <!-- steer_link 中心在 base_link 下方 0.18m，使其完全处于底盘下方 -->
+    <xacro:property name="steer_z" value="-0.18" />
+
+    <!-- ===== Front Steering Wheel ===== -->
+    <xacro:steer_wheel
+      name="front"
+      parent="${name}"
+      xyz="${R} 0 ${steer_z}"
+      radius="${wheel_radius}"
+      width="${wheel_width}"
+      mass="${wheel_mass}"
+    />
+
+    <!-- ===== Left Steering Wheel ===== -->
+    <xacro:steer_wheel
+      name="left"
+      parent="${name}"
+      xyz="${-R/2} ${R*sqrt3_2} ${steer_z}"
+      radius="${wheel_radius}"
+      width="${wheel_width}"
+      mass="${wheel_mass}"
+    />
+
+    <!-- ===== Right Steering Wheel ===== -->
+    <xacro:steer_wheel
+      name="right"
+      parent="${name}"
+      xyz="${-R/2} ${-R*sqrt3_2} ${steer_z}"
+      radius="${wheel_radius}"
+      width="${wheel_width}"
+      mass="${wheel_mass}"
+    />
+
+    <!-- Gazebo colors -->
+    <gazebo reference="${name}">
+      <material>Gazebo/Blue</material>
+    </gazebo>
+    <gazebo reference="front_steer_link">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="left_steer_link">
+      <material>Gazebo/Yellow</material>
+    </gazebo>
+    <gazebo reference="right_steer_link">
+      <material>Gazebo/Green</material>
+    </gazebo>
+    <gazebo reference="front_wheel_link">
+      <material>Gazebo/Black</material>
+    </gazebo>
+    <gazebo reference="left_wheel_link">
+      <material>Gazebo/Black</material>
+    </gazebo>
+    <gazebo reference="right_wheel_link">
+      <material>Gazebo/Black</material>
+    </gazebo>
+
+  </xacro:macro>
+
+  <!-- ==================== Steer Wheel Macro ==================== -->
+  <xacro:macro name="steer_wheel" params="name parent xyz radius width mass">
+
+    <!-- Steering link (rotation around Z) -->
+    <link name="${name}_steer_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.03" length="0.05" />
+        </geometry>
+        <material name="grey">
+          <color rgba="0.5 0.5 0.5 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder radius="0.03" length="0.05" />
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.5" />
+        <inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0" ixz="0" iyz="0" />
+      </inertial>
+    </link>
+
+    <joint name="${name}_steer_joint" type="revolute">
+      <parent link="${parent}" />
+      <child link="${name}_steer_link" />
+      <origin xyz="${xyz}" rpy="0 0 0" />
+      <axis xyz="0 0 1" />
+      <limit lower="-1.57" upper="1.57" effort="100.0" velocity="3.0" />
+      <dynamics damping="0.1" friction="0.0" />
+    </joint>
+
+    <!-- Wheel link -->
+    <link name="${name}_wheel_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        <geometry>
+          <cylinder radius="${radius}" length="${width}" />
+        </geometry>
+        <material name="black">
+          <color rgba="0.1 0.1 0.1 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${pi/2} 0 0" />
+        <geometry>
+          <cylinder radius="${radius}" length="${width}" />
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${mass}" />
+        <inertia
+          ixx="${(1.0/12.0) * mass * (3*radius*radius + width*width)}"
+          iyy="${(1.0/12.0) * mass * (3*radius*radius + width*width)}"
+          izz="${0.5 * mass * radius * radius}"
+          ixy="0.0" ixz="0.0" iyz="0.0" />
+      </inertial>
+    </link>
+
+    <joint name="${name}_wheel_joint" type="continuous">
+      <parent link="${name}_steer_link" />
+      <child link="${name}_wheel_link" />
+      <!-- steer_link 中心(base_footprint)≈0.12，wheel 中心需在地面上方 0.1，故向下 0.02 -->
+      <origin xyz="0 0 ${-0.02}" rpy="0 0 0" />
+      <axis xyz="0 1 0" />
+      <limit effort="100.0" velocity="10.0" />
+      <dynamics damping="0.01" friction="0.0" />
+    </joint>
+
+  </xacro:macro>
+
+</robot>

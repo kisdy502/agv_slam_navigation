@@ -2,7 +2,7 @@
     <BehaviorTree ID="MainTree">
         <RecoveryNode number_of_retries="6" name="NavigateRecovery">
             <Sequence name="NavigateToPose">
-                <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased" />
+                <ComputePathToPose goal="{goal}" path="{path}" planner_id="HybridAstar" />
                 <FollowPath path="{path}" controller_id="FollowPath" />
             </Sequence>
             <ReactiveFallback name="RecoveryFallback">

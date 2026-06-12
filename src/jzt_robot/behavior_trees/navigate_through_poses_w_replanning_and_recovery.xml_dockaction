@@ -10,7 +10,7 @@
                 <ComputePathThroughPoses
                     goals="{goals}"
                     path="{path}"
-                    planner_id="GridBased" />
+                    planner_id="HybridAstar" />
 
                 <FollowPath path="{path}" controller_id="FollowPath" />
 
